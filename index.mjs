@@ -3,24 +3,38 @@ import semver from "semver";
 
 export const handler = async (event) => {
   /*──────────────────────────────────────
-    1. Query / path plumbing
+    1. Parse parameters
   ──────────────────────────────────────*/
   const qs = event.queryStringParameters || {};
-  const pkg = (event.pathParameters?.proxy ?? "").split("/")[0].toLowerCase();
-  const wantPrerelease = qs.includePrerelease === "true";
-  const wantLogs = qs.log === "true"; // ?log=true to enable
+  const pkg = qs.package?.toLowerCase() || (event.pathParameters?.proxy ?? "").split("/")[0].toLowerCase();
   const source = qs.source || "nuget"; // nuget or github
+  const wantLogs = qs.log === "true"; // ?log=true to enable
+
+  // Version filtering parameters
+  const track = qs.track ? parseInt(qs.track) : null; // 1 or 2 for major version
+  const gt = qs.gt || qs['>'];
+  const gte = qs.gte || qs['>='];
+  const lt = qs.lt || qs['<'];
+  const lte = qs.lte || qs['<='];
+  const eq = qs.eq || qs['='];
+  const includePrerelease = qs['include-prerelease'] === 'true' || qs.includePrerelease === 'true';
+  
+  // UI customization
+  const customLabel = qs.label;
+  const customColor = qs.color;
 
   const log = (...a) => wantLogs && console.log(...a);
 
-  log("🟢 START", { pkg, wantPrerelease, source });
+  log("🟢 START", { 
+    pkg, source, track, 
+    semverFilters: { gt, gte, lt, lte, eq }, 
+    includePrerelease,
+    customLabel, customColor
+  });
 
-  if (!pkg.match(/^[a-z0-9_.-]+$/)) {
+  if (!pkg || !pkg.match(/^[a-z0-9_.-]+$/)) {
     log("🔴 Invalid package name");
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Bad package name" }),
-    };
+    return createErrorResponse(400, "Invalid package name");
   }
 
   try {
@@ -28,119 +42,183 @@ export const handler = async (event) => {
     
     if (!versions || versions.length === 0) {
       log("🔴 No versions found");
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ error: "Package not found" }),
-      };
+      return createNotFoundResponse(pkg, customLabel, source);
     }
 
     log(`✅ ${versions.length} versions retrieved`);
 
-    // keep only strings semver can really parse
-    const valid = versions.filter((v) => semver.valid(v));
+    // Filter to valid semver versions
+    const validVersions = versions.filter((v) => semver.valid(v));
+
+    if (validVersions.length === 0) {
+      log("🔴 No valid semver versions found");
+      return createNotFoundResponse(pkg, customLabel, source);
+    }
 
     /*────────────────────────────────────
-      3. Pick latest per major
+      2. Apply filtering logic
     ────────────────────────────────────*/
-    const latestOf = (major) => {
-      const candidates = valid.filter((v) => {
-        const p = semver.parse(v);
-        return (
-          p.major === major && (wantPrerelease || p.prerelease.length === 0)
-        );
+    let filteredVersions = validVersions;
+
+    // Apply major version track filter
+    if (track) {
+      filteredVersions = filteredVersions.filter((v) => {
+        const parsed = semver.parse(v);
+        return parsed && parsed.major === track;
+      });
+      log(`🎯 Track ${track} filter: ${filteredVersions.length} versions`);
+    }
+
+    // Apply prerelease filter
+    if (!includePrerelease) {
+      filteredVersions = filteredVersions.filter((v) => {
+        const parsed = semver.parse(v);
+        return parsed && parsed.prerelease.length === 0;
+      });
+      log(`🎯 Stable only filter: ${filteredVersions.length} versions`);
+    }
+
+    // Apply semver range filters
+    if (gt) {
+      filteredVersions = filteredVersions.filter(v => semver.gt(v, gt));
+      log(`🎯 >${gt} filter: ${filteredVersions.length} versions`);
+    }
+    if (gte) {
+      filteredVersions = filteredVersions.filter(v => semver.gte(v, gte));
+      log(`🎯 >=${gte} filter: ${filteredVersions.length} versions`);
+    }
+    if (lt) {
+      filteredVersions = filteredVersions.filter(v => semver.lt(v, lt));
+      log(`🎯 <${lt} filter: ${filteredVersions.length} versions`);
+    }
+    if (lte) {
+      filteredVersions = filteredVersions.filter(v => semver.lte(v, lte));
+      log(`🎯 <=${lte} filter: ${filteredVersions.length} versions`);
+    }
+    if (eq) {
+      filteredVersions = filteredVersions.filter(v => semver.eq(v, eq));
+      log(`🎯 =${eq} filter: ${filteredVersions.length} versions`);
+    }
+
+    if (filteredVersions.length === 0) {
+      log("🔴 No versions match filters");
+      return createNotFoundResponse(pkg, customLabel, source, "No versions match criteria");
+    }
+
+    /*────────────────────────────────────
+      3. Select best version
+    ────────────────────────────────────*/
+    let selectedVersion;
+    
+    if (source === "github") {
+      // For GitHub, prefer clean versions over timestamped builds
+      const baseVersions = new Map();
+      filteredVersions.forEach(v => {
+        const baseVersion = v.replace(/-\d{8}-\d{6}$/, '');
+        if (!baseVersions.has(baseVersion) || v === baseVersion) {
+          baseVersions.set(baseVersion, v);
+        }
       });
       
-      if (candidates.length === 0) return "not found";
-      
-      // For GitHub packages, prefer versions without timestamp suffixes
-      // when multiple versions with same base exist
-      if (source === "github") {
-        // Group by base version (remove timestamp-like suffixes)
-        const baseVersions = new Map();
-        candidates.forEach(v => {
-          // Remove timestamp patterns like "-20250716-125702"
-          const baseVersion = v.replace(/-\d{8}-\d{6}$/, '');
-          if (!baseVersions.has(baseVersion) || v === baseVersion) {
-            baseVersions.set(baseVersion, v);
-          }
-        });
-        
-        // Sort the unique base versions and return the latest
-        const uniqueVersions = Array.from(baseVersions.values());
-        return uniqueVersions.sort(semver.rcompare)[0];
-      }
-      
+      const uniqueVersions = Array.from(baseVersions.values());
+      selectedVersion = uniqueVersions.sort(semver.rcompare)[0];
+    } else {
       // For other sources, use standard semver sorting
-      return candidates.sort(semver.rcompare)[0];
-    };
+      selectedVersion = filteredVersions.sort(semver.rcompare)[0];
+    }
 
-    const v1 = latestOf(1);
-    const v2 = latestOf(2);
-
-    log("🎯 Selected", { v1, v2 });
+    log("🎯 Selected version:", selectedVersion);
 
     /*────────────────────────────────────
-      4. Determine colors based on prerelease status
+      4. Create response
     ────────────────────────────────────*/
-    const v1Color = determineColor(v1);
-    const v2Color = determineColor(v2);
+    return createSuccessResponse(selectedVersion, pkg, source, customLabel, customColor);
 
-    /*────────────────────────────────────
-      5. Badge payload with configurable elements
-    ────────────────────────────────────*/
-    const logo = source === "github" ? "github" : "nuget";
-    const label = source === "github" ? "github packages" : "nuget";
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=1800",
-      },
-      body: JSON.stringify({
-        schemaVersion: 1,
-        label: label,
-        message: `${v1} | ${v2}`,
-        logo: logo,
-        color: determineOverallColor(v1Color, v2Color),
-        v1_track: v1,
-        v2_track: v2,
-        v1_color: v1Color,
-        v2_color: v2Color,
-        v1_logo: logo,
-        v2_logo: logo,
-        v1_label: getVersionLabel(pkg, "v1", source),
-        v2_label: getVersionLabel(pkg, "v2", source),
-        includePrerelease: wantPrerelease,
-        source: source,
-      }),
-    };
   } catch (err) {
     console.error(`🔥 ${source} fetch error:`, err.message);
     
-    // Determine appropriate status code
-    let statusCode = 500; // Default to internal server error
-    
-    if (err.response?.status) {
-      // HTTP error from external API (axios error)
-      statusCode = err.response.status;
-    } else if (err.message.includes('not found') || err.message.includes('configuration not found')) {
-      // Custom "not found" errors should be 404
-      statusCode = 404;
-    } else if (err.message.includes('authentication') || err.message.includes('unauthorized')) {
-      // Authentication errors should be 401
-      statusCode = 401;
+    // Handle specific errors that should return "not found" response
+    if (err.response?.status === 404 || 
+        err.message.includes('not found') || 
+        err.message.includes('Package not found')) {
+      log("🔴 Package not found, returning not found response");
+      return createNotFoundResponse(pkg, customLabel, source, "Package not found");
     }
     
-    return {
-      statusCode: statusCode,
-      body: JSON.stringify({ error: `Failed to fetch ${pkg} from ${source}` }),
-    };
+    // Other errors should still return error responses
+    return createErrorResponse(500, err.message);
   }
 };
 
 /*──────────────────────────────────────
-  Helper Functions
+  Response builders
+──────────────────────────────────────*/
+function createSuccessResponse(version, packageName, source, customLabel, customColor) {
+  const color = customColor || determineColor(version);
+  const label = customLabel || createDefaultLabel(packageName, source);
+  
+  return {
+    statusCode: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=1800",
+    },
+    body: JSON.stringify({
+      schemaVersion: 1,
+      label: label,
+      message: version,
+      color: color,
+      namedLogo: source === "github" ? "github" : "nuget"
+    }),
+  };
+}
+
+function createNotFoundResponse(packageName, customLabel, source, reason = "Package not found") {
+  const label = customLabel || createDefaultLabel(packageName, source);
+  
+  return {
+    statusCode: 200, // Still return 200 for shields.io
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=300", // Shorter cache for not found
+    },
+    body: JSON.stringify({
+      schemaVersion: 1,
+      label: label,
+      message: "not found",
+      color: "lightgrey",
+      namedLogo: source === "github" ? "github" : "nuget"
+    }),
+  };
+}
+
+function createErrorResponse(statusCode, message) {
+  return {
+    statusCode: statusCode,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ 
+      error: message 
+    }),
+  };
+}
+
+function createDefaultLabel(packageName, source) {
+  const sourceLabel = source === "github" ? "github" : "nuget";
+  return `${packageName} ${sourceLabel}`;
+}
+
+function determineColor(version) {
+  const parsed = semver.parse(version);
+  if (parsed && parsed.prerelease && parsed.prerelease.length > 0) {
+    return "orange"; // Prerelease versions
+  }
+  return "blue"; // Stable releases
+}
+
+/*──────────────────────────────────────
+  Version fetching functions (unchanged)
 ──────────────────────────────────────*/
 
 async function fetchVersions(source, pkg, log) {
@@ -215,43 +293,4 @@ async function fetchGitHubVersions(pkg, log) {
     }
     throw error;
   }
-}
-
-function determineColor(version) {
-  if (version === "not found") {
-    return "lightgrey";
-  }
-  
-  const parsed = semver.parse(version);
-  if (parsed && parsed.prerelease && parsed.prerelease.length > 0) {
-    return "orange"; // Prerelease versions
-  }
-  
-  return "blue"; // Stable releases
-}
-
-function determineOverallColor(v1Color, v2Color) {
-  // If either version is orange (prerelease), use orange
-  if (v1Color === "orange" || v2Color === "orange") {
-    return "orange";
-  }
-  
-  // If both are blue (stable), use blue
-  if (v1Color === "blue" && v2Color === "blue") {
-    return "blue";
-  }
-  
-  // Default to lightgrey if any "not found"
-  return "lightgrey";
-}
-
-function getVersionLabel(packageName, version, source = "nuget") {
-  // Create readable labels for the badges
-  const cleanName = packageName.replace(/[.-]/g, " ");
-  const title = cleanName.split(" ")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(".");
-    
-  const sourcePrefix = source === "github" ? "GH" : "NG";
-  return `${title} ${version}`;
 }

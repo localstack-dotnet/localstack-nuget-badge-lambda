@@ -1,341 +1,188 @@
-# Enhanced NuGet Badge API
+# NuGet & GitHub Packages Badge API
 
-A Lambda function that provides dynamic badge information for NuGet and GitHub packages, with configurable UI elements and intelligent color coding.
+A focused, parameter-driven Lambda API for generating dynamic package version badges using [shields.io endpoint badges](https://shields.io/badges/endpoint-badge).
 
-## Features
+## 🚀 Live API
 
-- **Multiple Package Sources**: Support for both NuGet.org and GitHub Packages
-- **Configurable UI Elements**: Dynamic logo, color, and label configuration
-- **Smart Color Logic**: 
-  - 🔵 Blue for stable releases
-  - 🟠 Orange for preview/prerelease versions
-  - ⚪ Light grey for packages not found
-- **Version Tracking**: Separate v1 and v2 series tracking
-- **img.shields.io Compatible**: Returns JSON format compatible with shields.io dynamic badges
+**Base URL:** `https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/`
 
-## API Usage
+## 📊 Quick Examples
 
-### Live Endpoint
+| Badge | URL |
+|-------|-----|
+| ![Latest Version](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/%3Fpackage%3DNewtonsoft.Json%26source%3Dnuget) | `?package=Newtonsoft.Json&source=nuget` |
+| ![v2 Track](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/%3Fpackage%3DMicrosoft.AspNetCore.App%26source%3Dnuget%26track%3D2) | `?package=Microsoft.AspNetCore.App&source=nuget&track=2` |
+| ![With Prereleases](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/%3Fpackage%3DMicrosoft.AspNetCore.App%26source%3Dnuget%26include-prerelease%3Dtrue) | `?package=Microsoft.AspNetCore.App&source=nuget&include-prerelease=true` |
 
-**Production API**: `https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/`
+## 🎯 API Design
 
-### Basic NuGet Package (Default)
+### Single Version Focus
 
+Each API call returns **one version** that matches your criteria, following the [shields.io endpoint badge schema](https://shields.io/badges/endpoint-badge):
+
+```json
+{
+  "schemaVersion": 1,
+  "label": "newtonsoft.json nuget",
+  "message": "13.0.3",
+  "color": "blue",
+  "namedLogo": "nuget"
+}
 ```
-GET /your-api-endpoint/localstack.client
-GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client
+
+### Parameters
+
+| Parameter | Description | Example | Default |
+|-----------|-------------|---------|---------|
+| `package` | Package name (required) | `Newtonsoft.Json` | - |
+| `source` | Package source | `nuget`, `github` | `nuget` |
+| `track` | Major version to track | `1`, `2`, `3`, etc. | Latest overall |
+| `include-prerelease` | Include prerelease versions | `true`, `false` | `false` |
+| `gt`, `gte`, `lt`, `lte`, `eq` | [Semver range filters](https://semver.org/) | `gt=1.0.0`, `lte=2.5.0` | None |
+| `label` | Custom badge label | `My Package` | Auto-generated |
+| `color` | Custom badge color | `purple`, `#ff0000` | Smart color |
+
+### Smart Colors
+
+- 🔵 **Blue**: Stable releases  
+- 🟠 **Orange**: Prerelease versions
+- ⚪ **Light Grey**: Not found
+
+## 📖 Usage Examples
+
+### Basic Usage
+
+```bash
+# Latest version
+https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget
+
+# Specific major version track  
+https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&track=2
+```
+
+### Version Range Filtering
+
+```bash
+# Versions greater than 6.0.0
+https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&gte=6.0.0
+
+# Versions between 3.0.0 and 6.0.0
+https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&gte=3.0.0&lt=6.0.0
+```
+
+### Including Prereleases
+
+```bash
+# Include preview/beta versions
+https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&include-prerelease=true
+```
+
+### Custom Styling
+
+```bash
+# Custom label and color
+https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget&label=JSON.NET&color=purple
 ```
 
 ### GitHub Packages
 
-```
-GET /your-api-endpoint/localstack.client?source=github
-GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?source=github
-```
-
-### With Prerelease Versions
-
-```
-GET /your-api-endpoint/localstack.client?includePrerelease=true
-GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?includePrerelease=true
+```bash
+# GitHub Packages (requires GITHUB_TOKEN)
+https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=github
 ```
 
-### With Logging Enabled
+## 🛠️ Shields.io Integration
 
-```
-GET /your-api-endpoint/localstack.client?log=true
-GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?log=true
-```
+### Method 1: Endpoint Badge (Recommended)
 
-## Query Parameters
+Uses your API's response directly:
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `source` | string | `nuget` | Package source: `nuget` or `github` |
-| `includePrerelease` | boolean | `false` | Include prerelease versions |
-| `log` | boolean | `false` | Enable debug logging |
-
-## Response Format
-
-The API returns a JSON object with the following structure:
-
-```json
-{
-  "schemaVersion": 1,
-  "label": "nuget",
-  "message": "1.2.3 | 2.1.0",
-  "logo": "nuget",
-  "color": "blue",
-  "v1_track": "1.2.3",
-  "v2_track": "2.1.0",
-  "v1_color": "blue",
-  "v2_color": "blue",
-  "v1_logo": "nuget",
-  "v2_logo": "nuget",
-  "v1_label": "LocalStack.Client v1",
-  "v2_label": "LocalStack.Client v2",
-  "includePrerelease": false,
-  "source": "nuget"
-}
+```markdown
+![Package Version](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=YourPackage&source=nuget)
 ```
 
-## img.shields.io Integration
+### Method 2: Additional Shields.io Styling
 
-### For v1 series (Fully Dynamic):
+Add shields.io parameters for extra customization:
 
-```
-https://img.shields.io/badge/dynamic/json.svg
-  ?url=https%3A%2F%2Fyour-api-endpoint%2FlocalStack.client%3FincludePrerelease%3Dtrue
-  &query=$.v1_track
-  &label=query:$.v1_label
-  &logo=query:$.v1_logo
-  &color=query:$.v1_color
+```markdown
+![Package Version](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=YourPackage&source=nuget&style=for-the-badge&logo=nuget)
 ```
 
-### For v2 series (Fully Dynamic):
+## 🔄 Migration from Old API
 
-```
-https://img.shields.io/badge/dynamic/json.svg
-  ?url=https%3A%2F%2Fyour-api-endpoint%2FlocalStack.client%3FincludePrerelease%3Dtrue
-  &query=$.v2_track
-  &label=query:$.v2_label
-  &logo=query:$.v2_logo
-  &color=query:$.v2_color
-```
-
-### Live Examples
-
-**NuGet v1 Badge:**
-```
-https://img.shields.io/badge/dynamic/json.svg
-  ?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue
-  &query=$.v1_track
-  &label=query:$.v1_label
-  &logo=query:$.v1_logo
-  &color=query:$.v1_color
-```
-
-[![NuGet v1](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue&query=$.v1_track&label=query:$.v1_label&logo=query:$.v1_logo&color=query:$.v1_color)](https://www.nuget.org/packages/LocalStack.Client/)
-
-**NuGet v2 Badge:**
-```
-https://img.shields.io/badge/dynamic/json.svg
-  ?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue
-  &query=$.v2_track
-  &label=query:$.v2_label
-  &logo=query:$.v2_logo
-  &color=query:$.v2_color
-```
-
-[![NuGet v2](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue&query=$.v2_track&label=query:$.v2_label&logo=query:$.v2_logo&color=query:$.v2_color)](https://www.nuget.org/packages/LocalStack.Client/)
-
-**GitHub Packages v2 Badge:**
-```
-https://img.shields.io/badge/dynamic/json.svg
-  ?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3Fsource%3Dgithub%26includePrerelease%3Dtrue
-  &query=$.v2_track
-  &label=query:$.v2_label
-  &logo=query:$.v2_logo
-  &color=query:$.v2_color
-```
-
-[![GitHub v2](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3Fsource%3Dgithub%26includePrerelease%3Dtrue&query=$.v2_track&label=query:$.v2_label&logo=query:$.v2_logo&color=query:$.v2_color)](https://github.com/orgs/localstack-dotnet/packages/nuget/package/LocalStack.Client)
-
-## GitHub Packages Setup
-
-For GitHub Packages support, you need to:
-
-1. **Set Environment Variable**: Add your GitHub Personal Access Token (PAT) as `GITHUB_TOKEN` environment variable
-2. **Configure Package Mapping**: Add your GitHub package configuration in the `githubConfig` object in `index.mjs`
-
-### GitHub PAT Requirements
-
-Your GitHub PAT needs the following scope:
-- `read:packages` - To read package information
-
-### Example GitHub Configuration
-
-```javascript
-const githubConfig = {
-  "localstack.client": {
-    org: "localstack-dotnet",
-    packageName: "LocalStack.Client"
-  },
-  "your.package": {
-    org: "your-org",
-    packageName: "Your.Package.Name"
-  }
-};
-```
-
-## Color Logic
-
-The API automatically determines colors based on version characteristics:
-
-- **Blue**: Stable releases (no prerelease identifiers)
-- **Orange**: Preview/prerelease versions (contains prerelease identifiers like `-alpha`, `-beta`, `-rc`)
-- **Light Grey**: Package not found
-
-The overall badge color is determined by:
-1. If either v1 or v2 is prerelease → Orange
-2. If both are stable → Blue  
-3. If any version not found → Light Grey
-
-## Local Development
-
-### Environment Setup
-
-1. **Clone and install dependencies:**
-   ```bash
-   git clone <repository-url>
-   cd localstack-nuget-badge-lambda
-   npm install
-   ```
-
-2. **Configure environment variables:**
-   ```bash
-   # Copy template file
-   cp .env.dist .env
-   
-   # Edit .env and set your GitHub token
-   GITHUB_TOKEN=your_github_personal_access_token_here
-   ```
-
-3. **Get GitHub Personal Access Token:**
-   - Go to: **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**
-   - Click **"Generate new token (classic)"**
-   - Select scopes: ✅ `read:packages` ✅ `read:org` 
-   - Copy the token and add it to `.env`
-
-### Running Tests
+**Old approach** (returned both v1 and v2):
 
 ```bash
-# Run comprehensive test suite
-npm test
-
-# Tests will show:
-# ✅ NuGet API integration
-# ✅ GitHub Packages API integration (if token set)
-# ✅ Error handling and edge cases
-# ✅ Version selection logic
-# ✅ Color and UI logic
+https://api.com/package-name
+# Returned: { v1: "1.5.2", v2: "2.1.0", v1_color: "blue", v2_color: "orange", ... }
 ```
 
-### Test Output Example
+**New approach** (focused, parameter-driven):
 
-```
-🚀 LOCALSTACK BADGE API TESTS
-============================================================
-🔑 GitHub Token: ✅ Set
-============================================================
+```bash
+# Get v1 track
+https://api.com/live/?package=package-name&track=1
 
-[1/8] ✅ NuGet - LocalStack.Client (with prerelease)
-      📊 Message: 1.6.0 | 2.0.0-preview1
-      🎨 Colors: v1=blue, v2=orange, overall=orange
-
-[2/8] ✅ GitHub - LocalStack.Client (with prerelease)  
-      📊 Message: not found | 2.0.0-preview1
-      🎨 Colors: v1=lightgrey, v2=orange, overall=orange
-
-============================================================
-📋 TEST SUMMARY: ✅ Passed: 8, ❌ Failed: 0, 📊 Total: 8
+# Get v2 track  
+https://api.com/live/?package=package-name&track=2
 ```
 
-## Deployment
+### Benefits
 
-This is designed to run as an AWS Lambda function with the following requirements:
+- ✅ **Standards-compliant**: Follows shields.io endpoint badge schema
+- ✅ **Flexible**: Powerful semver range filtering
+- ✅ **Focused**: One version per request
+- ✅ **Cacheable**: Better caching with specific requests
+- ✅ **Performant**: Faster responses, smaller payloads
 
-### Dependencies
+## 🏗️ Local Development
 
-```json
-{
-  "dependencies": {
-    "axios": "^1.10.0",
-    "semver": "^7.7.2",
-    "dotenv": "^16.0.0"
-  }
-}
+### Prerequisites
+
+- Node.js 18+
+- npm/yarn
+
+### Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+node test-focused.mjs
+
+# Test specific scenarios
+node test-new-api.mjs
 ```
 
 ### Environment Variables
 
-- `GITHUB_TOKEN` (optional): GitHub Personal Access Token for GitHub Packages access
+```bash
+# GitHub Packages (optional)
+GITHUB_TOKEN=your_github_token_here
+```
 
-### Lambda Configuration
-
-- Runtime: Node.js 18.x or later
-- Handler: `index.handler`
-- Timeout: 30 seconds
-- Memory: 128 MB
-
-## Examples
-
-### NuGet Package Response
+### Testing Examples
 
 ```bash
-curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?includePrerelease=true"
+# Test with logging enabled
+curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget&log=true"
+
+# Test track filtering
+curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&track=2"
+
+# Test semver ranges
+curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&gte=2.0.0&lt=3.0.0"
 ```
 
-```json
-{
-  "schemaVersion": 1,
-  "label": "nuget",
-  "message": "1.6.0 | 2.0.0-preview1",
-  "logo": "nuget",
-  "color": "orange",
-  "v1_track": "1.6.0",
-  "v2_track": "2.0.0-preview1",
-  "v1_color": "blue",
-  "v2_color": "orange",
-  "v1_logo": "nuget",
-  "v2_logo": "nuget",
-  "v1_label": "Localstack.Client v1",
-  "v2_label": "Localstack.Client v2",
-  "includePrerelease": true,
-  "source": "nuget"
-}
-```
+## 🤝 Contributing
 
-### GitHub Package Response
+1. Fork the repository
+2. Create your feature branch
+3. Test your changes with the provided test scripts
+4. Submit a pull request
 
-```bash
-curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?source=github&includePrerelease=true"
-```
+## 📝 License
 
-```json
-{
-  "schemaVersion": 1,
-  "label": "github packages",
-  "message": "not found | 2.0.0-preview1",
-  "logo": "github",
-  "color": "orange",
-  "v1_track": "not found",
-  "v2_track": "2.0.0-preview1",
-  "v1_color": "lightgrey",
-  "v2_color": "orange",
-  "v1_logo": "github",
-  "v2_logo": "github",
-  "v1_label": "Localstack.Client v1",
-  "v2_label": "Localstack.Client v2",
-  "includePrerelease": true,
-  "source": "github"
-}
-```
-
-## Error Handling
-
-The API returns appropriate HTTP status codes:
-
-- `200`: Success
-- `400`: Invalid package name
-- `404`: Package not found
-- `401`: GitHub authentication required
-- `500`: Server error
-
-Error responses include descriptive error messages:
-
-```json
-{
-  "error": "GitHub API requires authentication. Set GITHUB_TOKEN environment variable."
-}
-``` 
+MIT License - feel free to use this in your own projects!
