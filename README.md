@@ -15,28 +15,36 @@ A Lambda function that provides dynamic badge information for NuGet and GitHub p
 
 ## API Usage
 
+### Live Endpoint
+
+**Production API**: `https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/`
+
 ### Basic NuGet Package (Default)
 
 ```
 GET /your-api-endpoint/localstack.client
+GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client
 ```
 
 ### GitHub Packages
 
 ```
 GET /your-api-endpoint/localstack.client?source=github
+GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?source=github
 ```
 
 ### With Prerelease Versions
 
 ```
 GET /your-api-endpoint/localstack.client?includePrerelease=true
+GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?includePrerelease=true
 ```
 
 ### With Logging Enabled
 
 ```
 GET /your-api-endpoint/localstack.client?log=true
+GET https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?log=true
 ```
 
 ## Query Parameters
@@ -73,40 +81,65 @@ The API returns a JSON object with the following structure:
 
 ## img.shields.io Integration
 
-### For v1 series:
+### For v1 series (Fully Dynamic):
 
 ```
 https://img.shields.io/badge/dynamic/json.svg
   ?url=https%3A%2F%2Fyour-api-endpoint%2FlocalStack.client%3FincludePrerelease%3Dtrue
   &query=$.v1_track
-  &label=LocalStack.Client%20v1
-  &logo=nuget
-  &color=blue
+  &label=query:$.v1_label
+  &logo=query:$.v1_logo
+  &color=query:$.v1_color
 ```
 
-### For v2 series:
+### For v2 series (Fully Dynamic):
 
 ```
 https://img.shields.io/badge/dynamic/json.svg
   ?url=https%3A%2F%2Fyour-api-endpoint%2FlocalStack.client%3FincludePrerelease%3Dtrue
   &query=$.v2_track
-  &label=LocalStack.Client%20v2
-  &logo=nuget
-  &color=brightgreen
+  &label=query:$.v2_label
+  &logo=query:$.v2_logo
+  &color=query:$.v2_color
 ```
 
-### Using Dynamic Colors:
+### Live Examples
 
-You can also use the dynamic color information:
-
+**NuGet v1 Badge:**
 ```
 https://img.shields.io/badge/dynamic/json.svg
-  ?url=https%3A%2F%2Fyour-api-endpoint%2FlocalStack.client
+  ?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue
   &query=$.v1_track
-  &label=LocalStack.Client%20v1
-  &logo=nuget
-  &colorB=query:$.v1_color
+  &label=query:$.v1_label
+  &logo=query:$.v1_logo
+  &color=query:$.v1_color
 ```
+
+[![NuGet v1](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue&query=$.v1_track&label=query:$.v1_label&logo=query:$.v1_logo&color=query:$.v1_color)](https://www.nuget.org/packages/LocalStack.Client/)
+
+**NuGet v2 Badge:**
+```
+https://img.shields.io/badge/dynamic/json.svg
+  ?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue
+  &query=$.v2_track
+  &label=query:$.v2_label
+  &logo=query:$.v2_logo
+  &color=query:$.v2_color
+```
+
+[![NuGet v2](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3FincludePrerelease%3Dtrue&query=$.v2_track&label=query:$.v2_label&logo=query:$.v2_logo&color=query:$.v2_color)](https://www.nuget.org/packages/LocalStack.Client/)
+
+**GitHub Packages v2 Badge:**
+```
+https://img.shields.io/badge/dynamic/json.svg
+  ?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3Fsource%3Dgithub%26includePrerelease%3Dtrue
+  &query=$.v2_track
+  &label=query:$.v2_label
+  &logo=query:$.v2_logo
+  &color=query:$.v2_color
+```
+
+[![GitHub v2](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fyvfdbfas85.execute-api.eu-central-1.amazonaws.com%2Flive%2Flocalstack.client%3Fsource%3Dgithub%26includePrerelease%3Dtrue&query=$.v2_track&label=query:$.v2_label&logo=query:$.v2_logo&color=query:$.v2_color)](https://github.com/orgs/localstack-dotnet/packages/nuget/package/LocalStack.Client)
 
 ## GitHub Packages Setup
 
@@ -148,6 +181,66 @@ The overall badge color is determined by:
 2. If both are stable → Blue  
 3. If any version not found → Light Grey
 
+## Local Development
+
+### Environment Setup
+
+1. **Clone and install dependencies:**
+   ```bash
+   git clone <repository-url>
+   cd localstack-nuget-badge-lambda
+   npm install
+   ```
+
+2. **Configure environment variables:**
+   ```bash
+   # Copy template file
+   cp .env.dist .env
+   
+   # Edit .env and set your GitHub token
+   GITHUB_TOKEN=your_github_personal_access_token_here
+   ```
+
+3. **Get GitHub Personal Access Token:**
+   - Go to: **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**
+   - Click **"Generate new token (classic)"**
+   - Select scopes: ✅ `read:packages` ✅ `read:org` 
+   - Copy the token and add it to `.env`
+
+### Running Tests
+
+```bash
+# Run comprehensive test suite
+npm test
+
+# Tests will show:
+# ✅ NuGet API integration
+# ✅ GitHub Packages API integration (if token set)
+# ✅ Error handling and edge cases
+# ✅ Version selection logic
+# ✅ Color and UI logic
+```
+
+### Test Output Example
+
+```
+🚀 LOCALSTACK BADGE API TESTS
+============================================================
+🔑 GitHub Token: ✅ Set
+============================================================
+
+[1/8] ✅ NuGet - LocalStack.Client (with prerelease)
+      📊 Message: 1.6.0 | 2.0.0-preview1
+      🎨 Colors: v1=blue, v2=orange, overall=orange
+
+[2/8] ✅ GitHub - LocalStack.Client (with prerelease)  
+      📊 Message: not found | 2.0.0-preview1
+      🎨 Colors: v1=lightgrey, v2=orange, overall=orange
+
+============================================================
+📋 TEST SUMMARY: ✅ Passed: 8, ❌ Failed: 0, 📊 Total: 8
+```
+
 ## Deployment
 
 This is designed to run as an AWS Lambda function with the following requirements:
@@ -157,8 +250,9 @@ This is designed to run as an AWS Lambda function with the following requirement
 ```json
 {
   "dependencies": {
-    "axios": "^1.6.0",
-    "semver": "^7.5.0"
+    "axios": "^1.10.0",
+    "semver": "^7.7.2",
+    "dotenv": "^16.0.0"
   }
 }
 ```
@@ -179,25 +273,25 @@ This is designed to run as an AWS Lambda function with the following requirement
 ### NuGet Package Response
 
 ```bash
-curl "https://your-api-endpoint/newtonsoft.json"
+curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?includePrerelease=true"
 ```
 
 ```json
 {
   "schemaVersion": 1,
   "label": "nuget",
-  "message": "not found | 13.0.3",
+  "message": "1.6.0 | 2.0.0-preview1",
   "logo": "nuget",
-  "color": "blue",
-  "v1_track": "not found",
-  "v2_track": "13.0.3",
-  "v1_color": "lightgrey",
-  "v2_color": "blue",
+  "color": "orange",
+  "v1_track": "1.6.0",
+  "v2_track": "2.0.0-preview1",
+  "v1_color": "blue",
+  "v2_color": "orange",
   "v1_logo": "nuget",
   "v2_logo": "nuget",
-  "v1_label": "Newtonsoft.Json v1",
-  "v2_label": "Newtonsoft.Json v2",
-  "includePrerelease": false,
+  "v1_label": "Localstack.Client v1",
+  "v2_label": "Localstack.Client v2",
+  "includePrerelease": true,
   "source": "nuget"
 }
 ```
@@ -205,25 +299,25 @@ curl "https://your-api-endpoint/newtonsoft.json"
 ### GitHub Package Response
 
 ```bash
-curl "https://your-api-endpoint/localstack.client?source=github"
+curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/localstack.client?source=github&includePrerelease=true"
 ```
 
 ```json
 {
   "schemaVersion": 1,
   "label": "github packages",
-  "message": "1.5.2 | 2.1.0-preview",
+  "message": "not found | 2.0.0-preview1",
   "logo": "github",
   "color": "orange",
-  "v1_track": "1.5.2",
-  "v2_track": "2.1.0-preview",
-  "v1_color": "blue",
+  "v1_track": "not found",
+  "v2_track": "2.0.0-preview1",
+  "v1_color": "lightgrey",
   "v2_color": "orange",
   "v1_logo": "github",
   "v2_logo": "github",
-  "v1_label": "LocalStack.Client v1",
-  "v2_label": "LocalStack.Client v2",
-  "includePrerelease": false,
+  "v1_label": "Localstack.Client v1",
+  "v2_label": "Localstack.Client v2",
+  "includePrerelease": true,
   "source": "github"
 }
 ```
