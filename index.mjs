@@ -9,7 +9,7 @@ export const handler = async (event) => {
   const qs = event.queryStringParameters || {};
   const pkg = (event.pathParameters?.proxy ?? "").split("/")[0].toLowerCase();
   const wantPrerelease = qs.includePrerelease === "true";
-  const wantLogs = qs.log !== "false"; // ?log=false to silence
+  const wantLogs = qs.log === "true"; // ?log=true to enable
 
   const log = (...a) => wantLogs && console.log(...a);
 
