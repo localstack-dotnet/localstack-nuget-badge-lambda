@@ -3,39 +3,29 @@ import semver from "semver";
 
 export const handler = async (event) => {
   /*──────────────────────────────────────
-    1. Parse parameters
+    1. Validate and parse parameters (fail-fast)
   ──────────────────────────────────────*/
-  const qs = event.queryStringParameters || {};
-  const pkg = qs.package?.toLowerCase() || (event.pathParameters?.proxy ?? "").split("/")[0].toLowerCase();
-  const source = qs.source || "nuget"; // nuget or github
-  const wantLogs = qs.log === "true"; // ?log=true to enable
+  let validatedParams;
+  try {
+    validatedParams = validateAndParseParameters(event.queryStringParameters || {}, event.pathParameters);
+  } catch (error) {
+    return createErrorResponse(400, error.message);
+  }
 
-  // Version filtering parameters
-  const track = qs.track ? parseInt(qs.track) : null; // 1 or 2 for major version
-  const gt = qs.gt || qs['>'];
-  const gte = qs.gte || qs['>='];
-  const lt = qs.lt || qs['<'];
-  const lte = qs.lte || qs['<='];
-  const eq = qs.eq || qs['='];
-  const includePrerelease = qs['include-prerelease'] === 'true' || qs.includePrerelease === 'true';
-  
-  // UI customization
-  const customLabel = qs.label;
-  const customColor = qs.color;
+  const { 
+    pkg, source, wantLogs, track, semverFilters, 
+    includePrerelease, preferClean, customLabel, customColor 
+  } = validatedParams;
 
   const log = (...a) => wantLogs && console.log(...a);
 
   log("🟢 START", { 
     pkg, source, track, 
-    semverFilters: { gt, gte, lt, lte, eq }, 
+    semverFilters, 
     includePrerelease,
+    preferClean,
     customLabel, customColor
   });
-
-  if (!pkg || !pkg.match(/^[a-z0-9_.-]+$/)) {
-    log("🔴 Invalid package name");
-    return createErrorResponse(400, "Invalid package name");
-  }
 
   try {
     const versions = await fetchVersions(source, pkg, log);
@@ -61,7 +51,7 @@ export const handler = async (event) => {
     let filteredVersions = validVersions;
 
     // Apply major version track filter
-    if (track) {
+    if (track !== null) {
       filteredVersions = filteredVersions.filter((v) => {
         const parsed = semver.parse(v);
         return parsed && parsed.major === track;
@@ -79,6 +69,7 @@ export const handler = async (event) => {
     }
 
     // Apply semver range filters
+    const { gt, gte, lt, lte, eq } = semverFilters;
     if (gt) {
       filteredVersions = filteredVersions.filter(v => semver.gt(v, gt));
       log(`🎯 >${gt} filter: ${filteredVersions.length} versions`);
@@ -110,20 +101,24 @@ export const handler = async (event) => {
     ────────────────────────────────────*/
     let selectedVersion;
     
-    if (source === "github") {
-      // For GitHub, prefer clean versions over timestamped builds
-      const baseVersions = new Map();
+    if (source === "github" && preferClean) {
+      // For GitHub with prefer-clean: prefer manually tagged versions over timestamped builds
+      // This handles cases like preferring '2.0.0-preview1' over '2.0.0-preview1-20250716-125702'
+      const versionPreference = new Map();
       filteredVersions.forEach(v => {
-        const baseVersion = v.replace(/-\d{8}-\d{6}$/, '');
-        if (!baseVersions.has(baseVersion) || v === baseVersion) {
-          baseVersions.set(baseVersion, v);
+        const baseVersion = v.replace(/-\d{8}-\d{6}$/, ''); // Remove timestamp suffix
+        const isCleanVersion = v === baseVersion;
+        
+        if (!versionPreference.has(baseVersion) || isCleanVersion) {
+          versionPreference.set(baseVersion, v);
         }
       });
       
-      const uniqueVersions = Array.from(baseVersions.values());
-      selectedVersion = uniqueVersions.sort(semver.rcompare)[0];
+      const preferredVersions = Array.from(versionPreference.values());
+      selectedVersion = preferredVersions.sort(semver.rcompare)[0];
+      log(`🧹 GitHub prefer-clean applied: ${preferredVersions.length} preferred versions`);
     } else {
-      // For other sources, use standard semver sorting
+      // Standard semver sorting for all other cases
       selectedVersion = filteredVersions.sort(semver.rcompare)[0];
     }
 
@@ -218,7 +213,121 @@ function determineColor(version) {
 }
 
 /*──────────────────────────────────────
-  Version fetching functions (unchanged)
+  Parameter validation and parsing (fail-fast)
+──────────────────────────────────────*/
+
+function validateAndParseParameters(qs, pathParameters) {
+  // 1. Extract and validate package name
+  const pkg = (qs.package?.toLowerCase() || (pathParameters?.proxy ?? "").split("/")[0].toLowerCase()).trim();
+  
+  if (!pkg) {
+    throw new Error("Package name is required");
+  }
+  
+  if (!pkg.match(/^[a-z0-9_.-]+$/)) {
+    throw new Error("Invalid package name format");
+  }
+
+  // 2. Validate source
+  const sourceParam = qs.source;
+  let source;
+  
+  if (sourceParam === undefined || sourceParam === null) {
+    source = "nuget"; // Default value
+  } else if (sourceParam === "" || sourceParam.trim() === "" || !["nuget", "github"].includes(sourceParam)) {
+    throw new Error(`Invalid source '${sourceParam}'. Must be 'nuget' or 'github'`);
+  } else {
+    source = sourceParam;
+  }
+
+  // 3. Parse and validate version tracking
+  const track = parseTrackWithValidation(qs.track);
+
+  // 4. Parse and validate semver range filters (fail-fast on invalid semver)
+  const semverFilters = {
+    gt: validateAndCoerceVersion(qs.gt || qs['>'], 'gt'),
+    gte: validateAndCoerceVersion(qs.gte || qs['>='], 'gte'),
+    lt: validateAndCoerceVersion(qs.lt || qs['<'], 'lt'),
+    lte: validateAndCoerceVersion(qs.lte || qs['<='], 'lte'),
+    eq: validateAndCoerceVersion(qs.eq || qs['='], 'eq')
+  };
+
+  // 5. Parse boolean flags
+  const includePrerelease = qs['include-prerelease'] === 'true' || 
+                           qs.includePrerelease === 'true' || 
+                           qs.includeprerelease === 'true';
+  
+  const preferClean = qs['prefer-clean'] === 'true' || qs.preferClean === 'true';
+  const wantLogs = qs.log === 'true';
+
+  // 6. UI customization (no validation needed)
+  const customLabel = qs.label;
+  const customColor = qs.color;
+
+  return {
+    pkg,
+    source: source,
+    track,
+    semverFilters,
+    includePrerelease,
+    preferClean,
+    wantLogs,
+    customLabel,
+    customColor
+  };
+}
+
+function validateAndCoerceVersion(version, paramName) {
+  if (!version) return null;
+  
+  try {
+    // First check if it looks like a reasonable version string
+    if (!/^[\d.]+(-[\w.-]+)?(\+[\w.-]+)?$/.test(version.toString())) {
+      throw new Error(`Invalid semver format for parameter '${paramName}': '${version}'`);
+    }
+    
+    // Check for invalid patterns like too many dots
+    const versionStr = version.toString();
+    const parts = versionStr.split('.');
+    if (parts.length > 3 && !versionStr.includes('-') && !versionStr.includes('+')) {
+      throw new Error(`Invalid semver format for parameter '${paramName}': '${version}'`);
+    }
+    
+    const coerced = semver.coerce(version);
+    if (coerced) return coerced.version;
+    
+    // If coercion fails, throw descriptive error
+    throw new Error(`Invalid semver format for parameter '${paramName}': '${version}'`);
+  } catch (error) {
+    if (error.message.includes('Invalid semver format')) {
+      throw error; // Re-throw our custom error
+    }
+    throw new Error(`Invalid semver format for parameter '${paramName}': '${version}'`);
+  }
+}
+
+function parseTrackWithValidation(trackParam) {
+  if (!trackParam) return null;
+  
+  // Handle "v1", "v2", "1", "2" formats
+  const cleaned = trackParam.toString().toLowerCase().replace(/^v/, '');
+  
+  // Check for decimal numbers first
+  if (cleaned.includes('.')) {
+    throw new Error(`Invalid track parameter: '${trackParam}'. Must be a positive integer (e.g., '1', 'v2')`);
+  }
+  
+  const parsed = parseInt(cleaned);
+  
+  if (isNaN(parsed) || parsed < 0 || cleaned !== parsed.toString()) {
+    throw new Error(`Invalid track parameter: '${trackParam}'. Must be a positive integer (e.g., '1', 'v2')`);
+  }
+  
+  return parsed;
+}
+
+/*──────────────────────────────────────
+  Version fetching functions
 ──────────────────────────────────────*/
 
 async function fetchVersions(source, pkg, log) {
