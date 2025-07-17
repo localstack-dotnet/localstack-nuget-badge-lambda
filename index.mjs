@@ -350,25 +350,20 @@ async function fetchNuGetVersions(pkg, log) {
 }
 
 async function fetchGitHubVersions(pkg, log) {
-  // For GitHub packages, we'll use a different approach
-  // Expected format for pkg: just the package name (e.g., "localstack.client")
-  // Organization will be inferred or configured separately
+  // For GitHub packages, we use a fixed organization but allow any package name
+  // This is our current limitation as documented in the README
   
-  // For now, we'll hardcode the known GitHub package info
-  // In production, you'd want to make this configurable
-  const githubConfig = {
-    "localstack.client": {
-      org: "localstack-dotnet",
-      packageName: "LocalStack.Client"
-    }
-  };
+  // Fixed organization for all GitHub packages
+  const githubOrg = "localstack-dotnet";
   
-  const config = githubConfig[pkg.toLowerCase()];
-  if (!config) {
-    throw new Error(`GitHub package not found: ${pkg}`);
-  }
+  // Convert package name to proper case for GitHub API
+  // e.g., "localstack.client.extensions" -> "LocalStack.Client.Extensions"
+  const packageName = pkg
+    .split('.')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('.');
   
-  const url = `https://api.github.com/orgs/${config.org}/packages/nuget/${encodeURIComponent(config.packageName)}/versions`;
+  const url = `https://api.github.com/orgs/${githubOrg}/packages/nuget/${encodeURIComponent(packageName)}/versions`;
   log("📡 GET GitHub", url);
 
   const headers = {
@@ -398,7 +393,7 @@ async function fetchGitHubVersions(pkg, log) {
       throw new Error("GitHub API requires authentication. Set GITHUB_TOKEN environment variable.");
     }
     if (error.response?.status === 404) {
-      throw new Error(`GitHub package not found: ${config.org}/${config.packageName}`);
+      throw new Error(`GitHub package not found: ${githubOrg}/${packageName}`);
     }
     throw error;
   }
