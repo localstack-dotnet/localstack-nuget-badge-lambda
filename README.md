@@ -1,12 +1,12 @@
 # LocalStack Badge API
 
-> **📚 Open Source Example**: LocalStack's solution for dynamic package version and CI/CD test result badges using [shields.io endpoint badges](https://shields.io/badges/endpoint-badge). This demonstrates how LocalStack handles their two-track versioning strategy and CI/CD badge integration. Use this as inspiration for building your own badge infrastructure.
+> **📚 Open Source Example**: [LocalStack.NET Client](https://github.com/localstack-dotnet/localstack-dotnet-client) solution for dynamic package version and CI/CD test result badges using [shields.io endpoint badges](https://shields.io/badges/endpoint-badge). This demonstrates how LocalStack.NET Client handles their two-track versioning strategy and CI/CD badge integration. Use this as inspiration for building your own badge infrastructure.
 
 ## 🎯 Project Scope & Purpose
 
 ### LocalStack-Specific Implementation
 
-This project demonstrates LocalStack's badge infrastructure for:
+This project demonstrates [LocalStack.NET Client](https://github.com/localstack-dotnet/localstack-dotnet-client)'s badge infrastructure for:
 
 - 🛡️ **LocalStack.Client v1.x**: Maintenance mode for AWS SDK v3 users (EOL: July 2026)
 - 🚀 **LocalStack.Client v2.0**: Future-focused with native AWS SDK v4 support and Native AOT roadmap
@@ -15,10 +15,10 @@ This project demonstrates LocalStack's badge infrastructure for:
 ### What's LocalStack-Specific vs General
 
 - ✅ **NuGet Integration**: Works for any NuGet package (general purpose)
-- 🔒 **GitHub Packages**: Tailored specifically for LocalStack organization packages
-- 🔒 **Test Result Badges**: Pull from LocalStack's specific CI/CD pipeline via Gist
+- 🔒 **GitHub Packages**: Tailored specifically for LocalStack.NET Client organization packages
+- 🔒 **Test Result Badges**: Pull from LocalStack.NET Client's specific CI/CD pipeline via Gist
 
-**Use this as inspiration** for your own badge solutions rather than expecting to use LocalStack's endpoints for your packages.
+**Use this as inspiration** for your own badge solutions rather than expecting to use [LocalStack.NET Client](https://github.com/localstack-dotnet/localstack-dotnet-client)'s endpoints for your packages.
 
 ## 🚀 Live API
 
@@ -28,8 +28,8 @@ This project demonstrates LocalStack's badge infrastructure for:
 
 | Badge Type | Example | Modern URL |
 |------------|---------|------------|
-| 📦 LocalStack v1.x | ![LocalStack v1](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D1) | `/badge/packages/localstack.client?source=nuget&track=1` |
-| 📦 LocalStack v2.x | ![LocalStack v2](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D2%26include-prerelease%3Dtrue) | `/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true` |
+| 📦 LocalStack.NET Client v1.x | ![LocalStack v1](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D1) | `/badge/packages/localstack.client?source=nuget&track=1` |
+| 📦 LocalStack.NET Client v2.x | ![LocalStack v2](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D2%26include-prerelease%3Dtrue) | `/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true` |
 | 🧪 Test Results | ![Tests Linux](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux) | `/badge/tests/linux` |
 
 ## 🎯 API Endpoints
@@ -41,10 +41,11 @@ GET /badge/packages/{package-name}?source={nuget|github}&[options]
 ```
 
 **Sources:**
-- `nuget` - Works for any NuGet package
-- `github` - LocalStack organization packages only
 
-### Test Result Badges (LocalStack-Specific)
+- `nuget` - Works for any NuGet package
+- `github` - LocalStack.NET Client organization packages only
+
+### Test Result Badges (LocalStack.NET Client-Specific)
 
 ```
 GET /badge/tests/{platform}           # Returns badge JSON
@@ -105,9 +106,9 @@ All badge endpoints return [shields.io endpoint badge format](https://shields.io
 /badge/packages/Microsoft.AspNetCore.App?source=nuget&include-prerelease=true
 ```
 
-## 🧪 LocalStack Test Result Badges
+## 🧪 LocalStack.NET Client Test Result Badges
 
-**Note**: These pull from LocalStack's specific CI/CD pipeline. For your own project, you'd need to adapt the Gist integration.
+**Note**: These pull from [LocalStack.NET Client](https://github.com/localstack-dotnet/localstack-dotnet-client)'s specific [CI/CD pipeline](https://github.com/localstack-dotnet/localstack-dotnet-client/blob/master/.github/workflows/ci-cd.yml). For your own project, you'd need to adapt the Gist integration.
 
 ### Platform-Specific Test Results
 
@@ -156,7 +157,7 @@ All badge endpoints return [shields.io endpoint badge format](https://shields.io
 - 🔴 **Red**: Some tests failed
 - ⚪ **Light Grey**: Not found / unavailable
 
-## 🎯 LocalStack's Real-World Usage
+## 🎯 LocalStack.NET Client's Real-World Usage
 
 ### In LocalStack.Client README
 
@@ -218,15 +219,17 @@ The API accepts multiple parameter name formats:
 &preferClean=true
 ```
 
-## 📊 Data Sources (LocalStack-Specific)
+## 📊 Data Sources (LocalStack.NET Client-Specific)
 
 ### Package Data
-- **NuGet**: Standard NuGet.org API (works for any package)
-- **GitHub Packages**: LocalStack organization packages only (`localstack-dotnet` org)
 
-### Test Data (LocalStack CI/CD)
-- **Source**: LocalStack's GitHub Gist (`472c59b7c2a1898c48a29f3c88897c5a`)
-- **Updates**: LocalStack's CI/CD pipeline updates test results after each run
+- **NuGet**: Standard NuGet.org API (works for any package)
+- **GitHub Packages**: LocalStack.NET Client organization packages only (`localstack-dotnet` org)
+
+### Test Data (LocalStack.NET Client CI/CD)
+
+- **Source**: LocalStack.NET Client's GitHub Gist (`472c59b7c2a1898c48a29f3c88897c5a`)
+- **Updates**: LocalStack.NET Client's CI/CD pipeline updates test results after each run
 - **Format**: Platform-specific JSON files (`test-results-{platform}.json`)
 - **Caching**: 5-minute TTL for optimal performance
 
@@ -251,13 +254,13 @@ The API accepts multiple parameter name formats:
 #### Q: Badge shows "Package not found"
 
 - **For NuGet**: Verify the package name exists on nuget.org
-- **For GitHub**: Only LocalStack organization packages are supported
+- **For GitHub**: Only LocalStack.NET Client [organization packages](https://github.com/orgs/localstack-dotnet/packages?repo_name=localstack-dotnet-client) are supported
 - Check if the package exists in the specified source
 
 #### Q: Getting timestamped versions instead of clean tags
 
-- Add `&prefer-clean=true` parameter for LocalStack GitHub packages
-- This only affects LocalStack's GitHub sources
+- Add `&prefer-clean=true` parameter for LocalStack.NET Client GitHub packages
+- This only affects LocalStack.NET Client's GitHub sources
 
 #### Q: Badge shows older version than expected
 
@@ -267,9 +270,9 @@ The API accepts multiple parameter name formats:
 
 #### Q: Test badges show "unavailable"
 
-- These only work for LocalStack's CI/CD pipeline
+- These only work for LocalStack.NET Client's CI/CD pipeline
 - For your own project, you'd need to adapt the Gist integration
-- Check if LocalStack's test pipeline is currently running
+- Check if LocalStack.NET Client's test pipeline is currently running
 
 ### Error Responses
 
@@ -281,7 +284,7 @@ The API returns descriptive error messages:
 
 ## 🛠️ Adapting This for Your Project
 
-### To Build Your Own Badge API:
+### To Build Your Own Badge API
 
 1. **Package Sources**: Modify `src/handlers/packageHandler.mjs`
    - Keep NuGet integration as-is (universal)
@@ -298,7 +301,7 @@ The API returns descriptive error messages:
    - Add your own validation logic
    - Customize badge formatting
 
-4. **Deployment**: 
+4. **Deployment**:
    - Update AWS Lambda configuration
    - Set your own API Gateway domain
    - Configure environment variables for your APIs
@@ -346,7 +349,7 @@ tests/
 ### Environment Variables
 
 ```bash
-# GitHub Packages (required for LocalStack GitHub packages)
+# GitHub Packages (required for LocalStack.NET Client GitHub packages)
 GITHUB_TOKEN=your_github_token_here
 ```
 
@@ -355,7 +358,7 @@ GITHUB_TOKEN=your_github_token_here
 The comprehensive test suite (`npm run test:unit`) validates:
 
 - ✅ **Package badge generation**: NuGet and GitHub package integration
-- ✅ **Two-track strategy**: LocalStack.Client v1.x maintenance & v2.x future
+- ✅ **Two-track strategy**: LocalStack.NET Client v1.x maintenance & v2.x future
 - ✅ **Parameter parsing**: All variants and edge cases
 - ✅ **Version filtering**: Track, semver ranges, prerelease inclusion
 - ✅ **GitHub features**: prefer-clean parameter for timestamped builds
@@ -366,7 +369,7 @@ The comprehensive test suite (`npm run test:unit`) validates:
 
 ## 🤝 Contributing
 
-This is LocalStack's specific implementation, but contributions for improvements are welcome:
+This is LocalStack.NET Client's specific implementation, but contributions for improvements are welcome:
 
 1. Fork the repository
 2. Create your feature branch
@@ -374,6 +377,7 @@ This is LocalStack's specific implementation, but contributions for improvements
 4. Submit a pull request
 
 Focus on:
+
 - General improvements to the badge infrastructure
 - Better error handling and resilience
 - Performance optimizations
@@ -385,4 +389,4 @@ MIT License - feel free to use this as inspiration for your own badge infrastruc
 
 ---
 
-**🎯 Remember**: This is LocalStack's specific implementation. The GitHub Packages integration only works for LocalStack packages, and test badges pull from LocalStack's CI/CD. Use this as a reference for building your own badge solution!
+**🎯 Remember**: This is [LocalStack.NET Client](https://github.com/localstack-dotnet/localstack-dotnet-client)'s specific implementation. The GitHub Packages integration only works for LocalStack.NET Client packages, and test badges pull from LocalStack.NET Client's CI/CD. Use this as a reference for building your own badge solution!
