@@ -28,9 +28,9 @@ This project demonstrates [LocalStack.NET Client](https://github.com/localstack-
 
 | Badge Type | Example | Modern URL |
 |------------|---------|------------|
-| 📦 LocalStack.NET Client v1.x | ![LocalStack v1](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D1) | `/badge/packages/localstack.client?source=nuget&track=1` |
-| 📦 LocalStack.NET Client v2.x | ![LocalStack v2](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D2%26include-prerelease%3Dtrue) | `/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true` |
-| 🧪 Test Results | ![Tests Linux](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux) | `/badge/tests/linux` |
+| 📦 LocalStack.NET Client v1.x | ![LocalStack v1](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client?source=nuget&track=1) | `/badge/packages/localstack.client?source=nuget&track=1` |
+| 📦 LocalStack.NET Client v2.x | ![LocalStack v2](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true) | `/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true` |
+| 🧪 Test Results | ![Tests Linux](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux) | `/badge/tests/linux` |
 
 ## 🎯 API Endpoints
 
@@ -167,9 +167,9 @@ All badge endpoints return [shields.io endpoint badge format](https://shields.io
 ![NuGet v2.x](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true&label=NuGet%20v2.x)
 
 <!-- LocalStack CI/CD test matrix -->
-[![Linux Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux&label=Linux)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/linux)
-[![Windows Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/windows&label=Windows)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/windows)
-[![macOS Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/macos&label=macOS)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/macos)
+[![Linux Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux?label=Linux)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/linux)
+[![Windows Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/windows?label=Windows)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/windows)
+[![macOS Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/macos?label=macOS)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/macos)
 ```
 
 ### Version Range Examples
