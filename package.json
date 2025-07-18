@@ -7,9 +7,10 @@
   "scripts": {
     "test": "npm run test:legacy",
     "test:legacy": "node test.mjs",
-    "test:unit": "node --experimental-vm-modules --enable-source-maps ./node_modules/jest/bin/jest.js --testPathPattern=jest/unit",
+    "test:unit": "node --experimental-vm-modules --enable-source-maps ./node_modules/jest/bin/jest.js --testPathPatterns=jest/unit",
     "test:integration": "node tests/test-runner.mjs integration",
     "test:jest": "node --experimental-vm-modules --enable-source-maps ./node_modules/jest/bin/jest.js",
+    "test:jest-integration": "node --experimental-vm-modules --enable-source-maps ./node_modules/jest/bin/jest.js --testPathPatterns=jest/integration",
     "test:jest-watch": "node --experimental-vm-modules --enable-source-maps ./node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules --enable-source-maps ./node_modules/jest/bin/jest.js --coverage"
   },
