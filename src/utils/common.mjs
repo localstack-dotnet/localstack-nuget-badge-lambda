@@ -67,6 +67,18 @@ export function create404Response(message) {
   };
 }
 
+export function create400Response(message) {
+  return {
+    statusCode: 400,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ 
+      error: message 
+    }),
+  };
+}
+
 /*──────────────────────────────────────
   Test badge response builders
 ──────────────────────────────────────*/

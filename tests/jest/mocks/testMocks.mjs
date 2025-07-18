@@ -8,14 +8,38 @@ import { jest } from '@jest/globals';
 /**
  * Mock AWS Lambda event for testing routes
  */
-export const createMockLambdaEvent = (queryStringParameters = {}, pathParameters = {}, path = '') => ({
+export const createMockLambdaEvent = (queryStringParameters = {}, path = '') => ({
+  resource: '/{proxy+}',
+  path: path ? `/${path}` : '/',
   httpMethod: 'GET',
-  path: `/${path}`,
-  pathParameters,
-  queryStringParameters,
   headers: {
     'Accept': 'application/json',
-    'User-Agent': 'jest-test'
+    'User-Agent': 'jest-test',
+    'Host': 'localhost:3000'
+  },
+  multiValueHeaders: {},
+  pathParameters: path ? { proxy: path } : null,
+  queryStringParameters,
+  multiValueQueryStringParameters: Object.fromEntries(
+    Object.entries(queryStringParameters).map(([k, v]) => [k, [v]])
+  ),
+  stageVariables: null,
+  requestContext: {
+    resourceId: 'test',
+    resourcePath: '/{proxy+}',
+    httpMethod: 'GET',
+    extendedRequestId: 'test',
+    requestTime: new Date().toISOString(),
+    path: '/test',
+    accountId: 'test',
+    protocol: 'HTTP/1.1',
+    stage: 'test',
+    domainPrefix: 'test',
+    requestTimeEpoch: Date.now(),
+    requestId: 'test',
+    identity: { sourceIp: '127.0.0.1' },
+    domainName: 'localhost',
+    apiId: 'test'
   },
   body: null,
   isBase64Encoded: false
