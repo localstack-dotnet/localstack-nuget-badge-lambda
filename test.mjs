@@ -401,11 +401,11 @@ async function main() {
       }
     },
     
-    // === PATH PARAMETER TESTS ===
+    // === EXPLICIT ROUTE TESTS ===
     {
-      name: '🛤️  Path Parameter Fallback',
+      name: '🛤️  Explicit Package Route',
       params: { source: 'nuget', track: '2' },
-      pathParam: 'Microsoft.AspNetCore.App',
+      pathParam: 'badge/packages/Microsoft.AspNetCore.App',
       expectedStatus: 200,
       validation: { logo: 'nuget' }
     },

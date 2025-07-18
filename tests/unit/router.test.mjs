@@ -89,7 +89,7 @@ async function runRouterTests() {
       name: 'Package route empty package name',
       path: 'badge/packages/""',
       query: {},
-      expectedStatus: 404
+      expectedStatus: 400  // Empty package name is a client error, not not-found
     }
   ];
 
@@ -185,7 +185,7 @@ async function main() {
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Auto-run the tests when file is executed directly
+if (import.meta.url.includes(process.argv[1].replace(/\\/g, '/'))) {
   main();
 } 

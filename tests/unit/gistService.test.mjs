@@ -242,7 +242,7 @@ async function main() {
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Auto-run the tests when file is executed directly
+if (import.meta.url.includes(process.argv[1].replace(/\\/g, '/'))) {
   main();
 } 

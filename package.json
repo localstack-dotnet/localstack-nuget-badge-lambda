@@ -4,7 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test.mjs"
+    "test": "node test.mjs",
+    "test:legacy": "node tests/integration/legacy-compatibility.test.mjs",
+    "test:unit": "node tests/test-runner.mjs fast",
+    "test:integration": "node tests/test-runner.mjs integration",
+    "test:critical": "node tests/test-runner.mjs critical",
+    "test:all": "node tests/test-runner.mjs full",
+    "test:badges": "node tests/integration/test-badges.test.mjs",
+    "test:redirects": "node tests/integration/redirects.test.mjs",
+    "test:packages": "node tests/integration/package-badges.test.mjs",
+    "test:router": "node tests/unit/router.test.mjs",
+    "test:gist": "node tests/unit/gistService.test.mjs"
   },
   "keywords": [],
   "author": "",

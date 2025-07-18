@@ -34,16 +34,28 @@ const testSuites = [
     description: 'Caching, validation, error handling'
   },
   {
-    name: '🔄 Integration Tests - Backward Compatibility',
-    command: 'node tests/integration/backward-compatibility.test.mjs',
+    name: '🔄 Integration Tests - Legacy Compatibility',
+    command: 'node tests/integration/legacy-compatibility.test.mjs',
     critical: true,
     description: 'Ensures 100% backward compatibility (CRITICAL)'
   },
   {
-    name: '🚀 Integration Tests - New Features',
-    command: 'node tests/integration/new-features.test.mjs',
+    name: '🧪 Integration Tests - Test Badges',
+    command: 'node tests/integration/test-badges.test.mjs',
     critical: false,
-    description: 'Test badges, redirects, explicit routes'
+    description: 'Test result badges with real Gist data'
+  },
+  {
+    name: '🔗 Integration Tests - Redirects',
+    command: 'node tests/integration/redirects.test.mjs',
+    critical: false,
+    description: 'GitHub redirect functionality'
+  },
+  {
+    name: '📦 Integration Tests - Package Badges',
+    command: 'node tests/integration/package-badges.test.mjs',
+    critical: false,
+    description: 'Explicit package badge routes'
   }
 ];
 
@@ -64,6 +76,10 @@ const modes = {
   'integration': {
     description: 'Integration tests only (real API calls)',
     suites: testSuites.filter(s => s.name.includes('Integration'))
+  },
+  'features': {
+    description: 'New feature tests only (badges, redirects, packages)',
+    suites: testSuites.filter(s => s.name.includes('Test Badges') || s.name.includes('Redirects') || s.name.includes('Package Badges'))
   }
 };
 
@@ -119,7 +135,7 @@ async function runTests(mode = 'full') {
   console.log(`📋 ${selectedMode.description}`);
   console.log(`🧪 Test suites: ${selectedMode.suites.length}`);
   
-  if (mode === 'integration' || mode === 'full') {
+  if (mode === 'integration' || mode === 'full' || mode === 'features') {
     console.log('🌐 This will make real API calls to NuGet, GitHub, and Gist');
     console.log('⏱️ Expected duration: 30-60 seconds depending on network');
   }
@@ -183,6 +199,8 @@ async function runTests(mode = 'full') {
       console.log('✅ Backward compatibility confirmed');
     } else if (mode === 'fast') {
       console.log('✅ Unit tests passing - logic is sound');
+    } else if (mode === 'features') {
+      console.log('✅ New features working correctly');
     }
     
   } else if (criticalFailed > 0) {
@@ -202,7 +220,7 @@ async function runTests(mode = 'full') {
   console.log(`   Platform: ${process.platform}`);
   console.log(`   GitHub Token: ${process.env.GITHUB_TOKEN ? '✅ Set' : '❌ Not Set'}`);
   
-  if (!process.env.GITHUB_TOKEN && (mode === 'full' || mode === 'integration')) {
+  if (!process.env.GITHUB_TOKEN && (mode === 'full' || mode === 'integration' || mode === 'features')) {
     console.log('   ⚠️ Some GitHub tests may be skipped without GITHUB_TOKEN');
   }
   
@@ -229,8 +247,8 @@ async function main() {
     console.log('\nExamples:');
     console.log('  node test-runner.mjs fast        # Quick unit tests');
     console.log('  node test-runner.mjs critical    # Backward compatibility');
+    console.log('  node test-runner.mjs features    # New feature tests');
     console.log('  node test-runner.mjs full        # Complete validation');
-    console.log('  node test-runner.mjs integration # New features only');
     process.exit(0);
   }
   
@@ -246,7 +264,7 @@ async function main() {
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Auto-run when file is executed directly
+if (import.meta.url.includes(process.argv[1].replace(/\\/g, '/'))) {
   main();
 } 
