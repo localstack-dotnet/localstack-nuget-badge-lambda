@@ -5,23 +5,20 @@
   "main": "index.js",
   "scripts": {
     "test": "node test.mjs",
-    "test:legacy": "node tests/integration/legacy-compatibility.test.mjs",
     "test:unit": "node tests/test-runner.mjs fast",
-    "test:integration": "node tests/test-runner.mjs integration",
-    "test:critical": "node tests/test-runner.mjs critical",
-    "test:all": "node tests/test-runner.mjs full",
-    "test:badges": "node tests/integration/test-badges.test.mjs",
-    "test:redirects": "node tests/integration/redirects.test.mjs",
-    "test:packages": "node tests/integration/package-badges.test.mjs",
-    "test:router": "node tests/unit/router.test.mjs",
-    "test:gist": "node tests/unit/gistService.test.mjs"
+    "test:integration": "node tests/test-runner.mjs integration", 
+    "test:all": "node tests/test-runner.mjs full"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.10.0",
-    "semver": "^7.7.2",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "semver": "^7.7.2"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^3.2.4",
+    "vitest": "^3.2.4"
   }
 }

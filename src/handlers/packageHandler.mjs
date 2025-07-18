@@ -182,12 +182,24 @@ function validateAndParseParameters(qs, pathParameters, packageFromPath) {
   const sourceParam = qs.source;
   let source;
   
-  if (sourceParam === undefined || sourceParam === null) {
-    source = "nuget"; // Default value
-  } else if (sourceParam === "" || sourceParam.trim() === "" || !["nuget", "github"].includes(sourceParam)) {
-    throw new Error(`Invalid source '${sourceParam}'. Must be 'nuget' or 'github'`);
-  } else {
+  if (packageFromPath) {
+    // For explicit routes (/badge/packages/{package}), source is required
+    if (sourceParam === undefined || sourceParam === null || sourceParam === "") {
+      throw new Error("Source parameter is required for explicit package routes. Must be 'nuget' or 'github'");
+    }
+    if (!["nuget", "github"].includes(sourceParam)) {
+      throw new Error(`Invalid source '${sourceParam}'. Must be 'nuget' or 'github'`);
+    }
     source = sourceParam;
+  } else {
+    // For legacy routes, maintain backward compatibility with default
+    if (sourceParam === undefined || sourceParam === null) {
+      source = "nuget"; // Default value for backward compatibility
+    } else if (sourceParam === "" || sourceParam.trim() === "" || !["nuget", "github"].includes(sourceParam)) {
+      throw new Error(`Invalid source '${sourceParam}'. Must be 'nuget' or 'github'`);
+    } else {
+      source = sourceParam;
+    }
   }
 
   // 3. Parse and validate version tracking

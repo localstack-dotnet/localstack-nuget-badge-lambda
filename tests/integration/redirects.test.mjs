@@ -101,9 +101,9 @@ async function runRedirectTests() {
       expectedStatus: 404
     },
     {
-      name: '❌ Case sensitivity test',
+      name: '🔀 Case sensitivity test',
       path: 'redirect/test-results/LINUX',
-      expectedStatus: 200, // Should work due to case-insensitive routing
+      expectedStatus: 302, // Should redirect due to case-insensitive routing
       validation: (result) => {
         const errors = [];
         if (!result.headers || !result.headers.Location) {
