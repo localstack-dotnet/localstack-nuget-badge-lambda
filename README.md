@@ -1,25 +1,24 @@
-# NuGet & GitHub Packages Badge API
+# LocalStack Badge API
 
-> **📚 Example Project**: This is a demonstration of a focused, parameter-driven Lambda API for generating dynamic package version badges using [shields.io endpoint badges](https://shields.io/badges/endpoint-badge). The GitHub Packages functionality is specifically tailored for LocalStack.Client's two-track versioning strategy and serves as an example rather than a general-purpose production solution.
+> **📚 Open Source Example**: LocalStack's solution for dynamic package version and CI/CD test result badges using [shields.io endpoint badges](https://shields.io/badges/endpoint-badge). This demonstrates how LocalStack handles their two-track versioning strategy and CI/CD badge integration. Use this as inspiration for building your own badge infrastructure.
 
 ## 🎯 Project Scope & Purpose
 
-### Two-Track Strategy Example
+### LocalStack-Specific Implementation
 
-This project demonstrates solving a specific badge problem for packages following a **two-track strategy**:
+This project demonstrates LocalStack's badge infrastructure for:
 
-- 🛡️ **v1.x**: Maintenance mode for AWS SDK v3 users (EOL: July 2026)
-- 🚀 **v2.0**: Future-focused with native AWS SDK v4 support and Native AOT roadmap
+- 🛡️ **LocalStack.Client v1.x**: Maintenance mode for AWS SDK v3 users (EOL: July 2026)
+- 🚀 **LocalStack.Client v2.0**: Future-focused with native AWS SDK v4 support and Native AOT roadmap
+- 🧪 **CI/CD Test Results**: Multi-platform test status badges from LocalStack's test pipeline
 
-### GitHub Packages Limitations
+### What's LocalStack-Specific vs General
 
-The GitHub Packages integration is **specifically handcrafted** for LocalStack.Client repository patterns and is not intended as a general-purpose solution. It demonstrates:
+- ✅ **NuGet Integration**: Works for any NuGet package (general purpose)
+- 🔒 **GitHub Packages**: Tailored specifically for LocalStack organization packages
+- 🔒 **Test Result Badges**: Pull from LocalStack's specific CI/CD pipeline via Gist
 
-- Handling timestamped vs clean version preferences
-- Custom sorting logic for GitHub package versioning chaos
-- Parameter-driven filtering for complex version scenarios
-
-**Use this as inspiration** for your own badge solutions rather than a drop-in production service.
+**Use this as inspiration** for your own badge solutions rather than expecting to use LocalStack's endpoints for your packages.
 
 ## 🚀 Live API
 
@@ -27,131 +26,186 @@ The GitHub Packages integration is **specifically handcrafted** for LocalStack.C
 
 ## 📊 Quick Examples
 
-| Badge | URL |
-|-------|-----|
-| ![Latest Version](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/%3Fpackage%3DNewtonsoft.Json%26source%3Dnuget) | `?package=Newtonsoft.Json&source=nuget` |
-| ![v2 Track](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/%3Fpackage%3DMicrosoft.AspNetCore.App%26source%3Dnuget%26track%3D2) | `?package=Microsoft.AspNetCore.App&source=nuget&track=2` |
-| ![With Prereleases](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/%3Fpackage%3DMicrosoft.AspNetCore.App%26source%3Dnuget%26include-prerelease%3Dtrue) | `?package=Microsoft.AspNetCore.App&source=nuget&include-prerelease=true` |
+| Badge Type | Example | Modern URL |
+|------------|---------|------------|
+| 📦 LocalStack v1.x | ![LocalStack v1](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D1) | `/badge/packages/localstack.client?source=nuget&track=1` |
+| 📦 LocalStack v2.x | ![LocalStack v2](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client%3Fsource%3Dnuget%26track%3D2%26include-prerelease%3Dtrue) | `/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true` |
+| 🧪 Test Results | ![Tests Linux](https://img.shields.io/endpoint?url=https%3A//yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux) | `/badge/tests/linux` |
 
-## 🎯 API Design
+## 🎯 API Endpoints
 
-### Single Version Focus
+### Package Version Badges
 
-Each API call returns **one version** that matches your criteria, following the [shields.io endpoint badge schema](https://shields.io/badges/endpoint-badge):
+```
+GET /badge/packages/{package-name}?source={nuget|github}&[options]
+```
+
+**Sources:**
+- `nuget` - Works for any NuGet package
+- `github` - LocalStack organization packages only
+
+### Test Result Badges (LocalStack-Specific)
+
+```
+GET /badge/tests/{platform}           # Returns badge JSON
+GET /redirect/test-results/{platform} # Returns 302 redirect to test results
+```
+
+**Platforms:** `linux` | `windows` | `macos`
+
+### Response Format
+
+All badge endpoints return [shields.io endpoint badge format](https://shields.io/badges/endpoint-badge):
 
 ```json
 {
   "schemaVersion": 1,
-  "label": "newtonsoft.json nuget",
-  "message": "13.0.3",
+  "label": "localstack.client nuget",
+  "message": "1.2.3",
   "color": "blue",
   "namedLogo": "nuget"
 }
 ```
 
-### Parameters
+## 📦 Package Version Badge Examples
+
+### LocalStack NuGet Packages
+
+```bash
+# LocalStack.Client v1.x (maintenance track)
+/badge/packages/localstack.client?source=nuget&track=1
+
+# LocalStack.Client v2.x (future track with prereleases)
+/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true
+
+# Latest stable LocalStack.Client
+/badge/packages/localstack.client?source=nuget
+```
+
+### LocalStack GitHub Packages
+
+```bash
+# LocalStack.Client from GitHub Packages (clean versions preferred)
+/badge/packages/localstack.client?source=github&include-prerelease=true&prefer-clean=true
+
+# Latest LocalStack GitHub package (may include timestamped builds)
+/badge/packages/localstack.client?source=github&include-prerelease=true
+```
+
+### General NuGet Examples
+
+```bash
+# Any public NuGet package
+/badge/packages/Newtonsoft.Json?source=nuget
+
+# ASP.NET Core v8 track
+/badge/packages/Microsoft.AspNetCore.App?source=nuget&track=8
+
+# Include prereleases
+/badge/packages/Microsoft.AspNetCore.App?source=nuget&include-prerelease=true
+```
+
+## 🧪 LocalStack Test Result Badges
+
+**Note**: These pull from LocalStack's specific CI/CD pipeline. For your own project, you'd need to adapt the Gist integration.
+
+### Platform-Specific Test Results
+
+```bash
+# LocalStack.Client test results by platform
+/badge/tests/linux      # Linux test results
+/badge/tests/windows    # Windows test results  
+/badge/tests/macos      # macOS test results
+```
+
+### Test Result Navigation
+
+```bash
+# Click to view LocalStack's GitHub Actions
+/redirect/test-results/linux    # → LocalStack CI/CD results
+/redirect/test-results/windows  # → LocalStack CI/CD results
+/redirect/test-results/macos    # → LocalStack CI/CD results
+```
+
+### Badge Examples
+
+- ✅ **All passed**: `"153 passed"` (green)
+- ❌ **Some failed**: `"2 failed, 150 passed"` (red)
+- ⚪ **Unavailable**: `"unavailable"` (grey)
+
+## 📋 Parameters
+
+### Package Badge Parameters
 
 | Parameter | Description | Example | Default |
 |-----------|-------------|---------|---------|
-| `package` | Package name (required) | `Newtonsoft.Json` | - |
-| `source` | Package source | `nuget`, `github` | `nuget` |
+| `package` | Package name (in URL path) | `localstack.client` | - |
+| `source` | Package source | `nuget`, `github` | Required |
 | `track` | Major version to track | `1`, `2`, `v2`, etc. | Latest overall |
 | `include-prerelease` | Include prerelease versions | `true`, `false` | `false` |
 | `prefer-clean` | **GitHub only**: Prefer manual tags over timestamped builds | `true`, `false` | `false` |
 | `gt`, `gte`, `lt`, `lte`, `eq` | [Semver range filters](https://semver.org/) | `gt=1.0.0`, `lte=2.5.0` | None |
-| `label` | Custom badge label | `My Package` | Auto-generated |
-| `color` | Custom badge color | `purple`, `#ff0000` | Smart color |
+| `label` | Custom badge label | `LocalStack%20v2` | Auto-generated |
+| `color` | Custom badge color | `purple`, `%23ff0000` | Smart color |
 
 ### Smart Colors
 
-- 🔵 **Blue**: Stable releases  
-- 🟠 **Orange**: Prerelease versions
-- ⚪ **Light Grey**: Not found
+- 🔵 **Blue**: Stable package releases  
+- 🟠 **Orange**: Prerelease package versions
+- 🟢 **Green**: All tests passed
+- 🔴 **Red**: Some tests failed
+- ⚪ **Light Grey**: Not found / unavailable
 
-## 📖 Usage Examples
+## 🎯 LocalStack's Real-World Usage
 
-### Basic Usage
+### In LocalStack.Client README
 
-```bash
-# Latest stable version
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget
+```markdown
+<!-- LocalStack.Client two-track strategy -->
+![NuGet v1.x](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client?source=nuget&track=1&label=NuGet%20v1.x)
+![NuGet v2.x](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true&label=NuGet%20v2.x)
 
-# Latest including prereleases
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget&include-prerelease=true
+<!-- LocalStack CI/CD test matrix -->
+[![Linux Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux&label=Linux)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/linux)
+[![Windows Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/windows&label=Windows)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/windows)
+[![macOS Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/macos&label=macOS)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/macos)
 ```
 
-### Version Tracking
+### Version Range Examples
 
 ```bash
-# Track latest v2.x versions
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&track=2
+# LocalStack.Client versions >= 1.5.0
+/badge/packages/localstack.client?source=nuget&gte=1.5.0
 
-# Track v1.x with prereleases (accepts "v1" or "1" format)
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=nuget&track=v1&include-prerelease=true
+# LocalStack v2 prereleases only
+/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true&lt=2.0.0
+
+# Include prereleases in range (requires -0 suffix)
+/badge/packages/localstack.client?source=nuget&gte=2.0.0-0&lt=3.0.0
 ```
 
-### Version Range Filtering
-
-```bash
-# Versions >= 6.0.0
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&gte=6.0.0
-
-# Versions between 3.0.0 and 6.0.0 (supports partial versions like "3.0")
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&gte=3.0&lt=6.0
-
-# Include prereleases in range (requires -0 suffix for prerelease inclusion)
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&gte=2.0.0-0&lt=3.0.0
-```
-
-### Custom Styling
-
-```bash
-# Custom label and color
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget&label=JSON.NET&color=purple
-
-# Custom color with hex code
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget&color=%23ff6b35
-```
-
-### GitHub Packages
-
-```bash
-# Basic GitHub package (requires GITHUB_TOKEN in environment)
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=github&include-prerelease=true
-
-# Standard semver behavior (may return timestamped versions)
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=github&include-prerelease=true
-# Returns: 2.0.0-preview1-20250716-125702
-
-# Prefer clean manual tags over automated timestamped builds
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=github&include-prerelease=true&prefer-clean=true
-# Returns: 2.0.0-preview1
-```
-
-## 🐙 GitHub Packages Special Features
+## 🐙 GitHub Packages Special Features (LocalStack-Specific)
 
 ### The `prefer-clean` Parameter
 
-GitHub Packages often contain both manual tags and automated timestamped builds:
+LocalStack's GitHub Packages contain both manual tags and automated timestamped builds:
 
 - `2.0.0-preview1` (manual tag)
 - `2.0.0-preview1-20250716-125702` (automated build)
 
-By semver rules, the timestamped version is "higher", but users usually want the clean manual tag.
-
 ```bash
 # Without prefer-clean (standard semver - returns timestamped version)
-?package=localstack.client&source=github&include-prerelease=true
+/badge/packages/localstack.client?source=github&include-prerelease=true
 # Result: 2.0.0-preview1-20250716-125702
 
 # With prefer-clean (user-friendly - returns manual tag)  
-?package=localstack.client&source=github&include-prerelease=true&prefer-clean=true
+/badge/packages/localstack.client?source=github&include-prerelease=true&prefer-clean=true
 # Result: 2.0.0-preview1
 ```
 
 ### Parameter Variants
 
-The API accepts multiple parameter name formats for convenience:
+The API accepts multiple parameter name formats:
 
 ```bash
 # All of these work for prerelease inclusion:
@@ -164,35 +218,30 @@ The API accepts multiple parameter name formats for convenience:
 &preferClean=true
 ```
 
-## 🎯 Real-World Examples
+## 📊 Data Sources (LocalStack-Specific)
 
-### Adding Badges to Your README
+### Package Data
+- **NuGet**: Standard NuGet.org API (works for any package)
+- **GitHub Packages**: LocalStack organization packages only (`localstack-dotnet` org)
 
-```markdown
-<!-- NuGet package badge -->
-![NuGet Version](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget)
+### Test Data (LocalStack CI/CD)
+- **Source**: LocalStack's GitHub Gist (`472c59b7c2a1898c48a29f3c88897c5a`)
+- **Updates**: LocalStack's CI/CD pipeline updates test results after each run
+- **Format**: Platform-specific JSON files (`test-results-{platform}.json`)
+- **Caching**: 5-minute TTL for optimal performance
 
-<!-- GitHub package with clean versions preferred -->
-![GitHub Package](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=github&include-prerelease=true&prefer-clean=true&label=LocalStack.Client)
+### Test Data Schema
 
-<!-- Tracking specific major version -->
-![ASP.NET Core v8](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.AspNetCore.App&source=nuget&track=8&label=ASP.NET%20Core%20v8)
-```
-
-### Popular Packages Examples
-
-```bash
-# Entity Framework Core (latest stable)
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.EntityFrameworkCore&source=nuget
-
-# Newtonsoft.Json with custom styling
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget&label=JSON.NET&color=brightgreen
-
-# .NET SDK preview versions
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Microsoft.NETCore.App&source=nuget&include-prerelease=true&track=9
-
-# Serilog latest in 3.x series
-https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Serilog&source=nuget&track=3
+```json
+{
+  "platform": "linux",
+  "passed": 150,
+  "failed": 2,
+  "skipped": 1,
+  "total": 153,
+  "url_html": "https://github.com/localstack/localstack-dotnet-client/actions/runs/123",
+  "timestamp": "2025-01-15T10:30:00Z"
+}
 ```
 
 ## 🔧 Troubleshooting
@@ -201,75 +250,58 @@ https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.
 
 #### Q: Badge shows "Package not found"
 
-- Verify the package name is correct and publicly available
-- For GitHub packages, ensure `GITHUB_TOKEN` environment variable is set
-- Check if the package exists in the specified source (nuget.org vs GitHub Packages)
+- **For NuGet**: Verify the package name exists on nuget.org
+- **For GitHub**: Only LocalStack organization packages are supported
+- Check if the package exists in the specified source
 
 #### Q: Getting timestamped versions instead of clean tags
 
-- Add `&prefer-clean=true` parameter for GitHub packages
-- This only affects GitHub sources, NuGet doesn't have this issue
+- Add `&prefer-clean=true` parameter for LocalStack GitHub packages
+- This only affects LocalStack's GitHub sources
 
 #### Q: Badge shows older version than expected
 
-- Check if you're using version filters (`track`, `gte`, `lt`) that exclude newer versions
+- Check version filters (`track`, `gte`, `lt`) that might exclude newer versions
 - For prereleases, ensure `include-prerelease=true` is set
-- Verify the package actually has the version you expect
+- Verify the package has the version you expect
 
-#### Q: Version range not working as expected
+#### Q: Test badges show "unavailable"
 
-- Remember: `gte=2.0.0` excludes prereleases; use `gte=2.0.0-0` to include them
-- Partial versions are supported: `gte=2.0` is equivalent to `gte=2.0.0`
-- Use proper semver format for precise filtering
-
-### Parameter Format Flexibility
-
-All parameters support multiple naming conventions:
-
-```bash
-# These are equivalent:
-&include-prerelease=true
-&includePrerelease=true
-&includeprerelease=true
-
-# These are equivalent:
-&prefer-clean=true
-&preferClean=true
-```
+- These only work for LocalStack's CI/CD pipeline
+- For your own project, you'd need to adapt the Gist integration
+- Check if LocalStack's test pipeline is currently running
 
 ### Error Responses
 
 The API returns descriptive error messages:
 
 - `400`: Invalid parameters or malformed semver ranges
-- `404`: Package not found in the specified source
-- `500`: API or network errors when fetching package data
+- `404`: Package not found or invalid route
+- `500`: API or network errors when fetching data
 
-## 🛠️ Shields.io Integration
+## 🛠️ Adapting This for Your Project
 
-### Method 1: Endpoint Badge (Recommended)
+### To Build Your Own Badge API:
 
-Uses your API's response directly:
+1. **Package Sources**: Modify `src/handlers/packageHandler.mjs`
+   - Keep NuGet integration as-is (universal)
+   - Replace GitHub Packages logic with your organization
+   - Update authentication tokens and API endpoints
 
-```markdown
-![Package Version](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=YourPackage&source=nuget)
-```
+2. **Test Data Source**: Modify `src/services/gistService.mjs`
+   - Replace Gist ID with your data source (Gist, database, API)
+   - Adapt JSON schema to your CI/CD output format
+   - Update caching strategy for your needs
 
-### Method 2: Additional Shields.io Styling
+3. **Customization**: Update `src/utils/common.mjs`
+   - Change colors, labels, caching strategies
+   - Add your own validation logic
+   - Customize badge formatting
 
-Add shields.io parameters for extra customization:
-
-```markdown
-![Package Version](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=YourPackage&source=nuget&style=for-the-badge&logo=nuget)
-```
-
-### Benefits
-
-- ✅ **Standards-compliant**: Follows shields.io endpoint badge schema
-- ✅ **Flexible**: Powerful semver range filtering
-- ✅ **Focused**: One version per request
-- ✅ **Cacheable**: Better caching with specific requests
-- ✅ **Performant**: Faster responses, smaller payloads
+4. **Deployment**: 
+   - Update AWS Lambda configuration
+   - Set your own API Gateway domain
+   - Configure environment variables for your APIs
 
 ## 🏗️ Local Development
 
@@ -284,51 +316,73 @@ Add shields.io parameters for extra customization:
 # Install dependencies
 npm install
 
-# Run comprehensive test suite
-node test.mjs
+# Run comprehensive test suite (258 tests!)
+npm run test:unit
+
+# Run legacy tests
+npm run test:legacy
+```
+
+### Project Structure
+
+```
+src/
+├── index.mjs              # Router + Lambda entry point
+├── handlers/              # Request handlers
+│   ├── packageHandler.mjs # Package version badges
+│   ├── testBadgeHandler.mjs # Test result badges
+│   └── testRedirectHandler.mjs # Test result redirects
+├── services/              # External API integrations
+│   └── gistService.mjs    # GitHub Gist integration
+└── utils/                 # Shared utilities
+    └── common.mjs         # Response builders, validation
+
+tests/
+├── jest/unit/            # Unit tests (258 tests)
+├── jest/fixtures/        # Test data and mocks
+└── jest/helpers/         # Test utilities
 ```
 
 ### Environment Variables
 
 ```bash
-# GitHub Packages (optional for GitHub tests)
+# GitHub Packages (required for LocalStack GitHub packages)
 GITHUB_TOKEN=your_github_token_here
 ```
 
 ### Testing Features
 
-The consolidated `test.mjs` includes:
+The comprehensive test suite (`npm run test:unit`) validates:
 
-- ✅ **Basic functionality**: NuGet and GitHub package fetching
+- ✅ **Package badge generation**: NuGet and GitHub package integration
 - ✅ **Two-track strategy**: LocalStack.Client v1.x maintenance & v2.x future
-- ✅ **Parameter parsing**: All variants (include-prerelease, includePrerelease, etc.)
+- ✅ **Parameter parsing**: All variants and edge cases
 - ✅ **Version filtering**: Track, semver ranges, prerelease inclusion
 - ✅ **GitHub features**: prefer-clean parameter for timestamped builds
-- ✅ **Real API validation**: Compares results with actual NuGet/GitHub APIs
-- ✅ **Error handling**: Invalid packages, malformed parameters
-- ✅ **Edge cases**: Impossible ranges, non-existent versions
-
-### Manual Testing Examples
-
-```bash
-# Test with logging enabled
-curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=Newtonsoft.Json&source=nuget&log=true"
-
-# Test two-track strategy
-curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=nuget&track=1"  # v1.x maintenance
-curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=nuget&track=2&include-prerelease=true"  # v2.x future
-
-# Test GitHub prefer-clean feature
-curl "https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/?package=localstack.client&source=github&include-prerelease=true&prefer-clean=true"
-```
+- ✅ **Test badge generation**: Platform-specific test results
+- ✅ **Test redirects**: Navigation to GitHub Actions
+- ✅ **Error handling**: Invalid packages, malformed parameters, network issues
+- ✅ **Caching**: TTL behavior and cache invalidation
 
 ## 🤝 Contributing
 
+This is LocalStack's specific implementation, but contributions for improvements are welcome:
+
 1. Fork the repository
 2. Create your feature branch
-3. Test your changes with the provided test scripts
+3. Test your changes with `npm run test:unit`
 4. Submit a pull request
+
+Focus on:
+- General improvements to the badge infrastructure
+- Better error handling and resilience
+- Performance optimizations
+- Code quality improvements
 
 ## 📝 License
 
-MIT License - feel free to use this in your own projects!
+MIT License - feel free to use this as inspiration for your own badge infrastructure!
+
+---
+
+**🎯 Remember**: This is LocalStack's specific implementation. The GitHub Packages integration only works for LocalStack packages, and test badges pull from LocalStack's CI/CD. Use this as a reference for building your own badge solution!
