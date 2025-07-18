@@ -30,7 +30,7 @@ This project demonstrates [LocalStack.NET Client](https://github.com/localstack-
 |------------|---------|------------|
 | 📦 LocalStack.NET Client v1.x | ![LocalStack v1](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client?source=nuget&track=1) | `/badge/packages/localstack.client?source=nuget&track=1` |
 | 📦 LocalStack.NET Client v2.x | ![LocalStack v2](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true) | `/badge/packages/localstack.client?source=nuget&track=2&include-prerelease=true` |
-| 🧪 Test Results | ![Tests Linux](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux) | `/badge/tests/linux` |
+| 🧪 Test Results | [![Linux Tests](https://img.shields.io/endpoint?url=https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/badge/tests/linux?label=Linux)](https://yvfdbfas85.execute-api.eu-central-1.amazonaws.com/live/redirect/test-results/linux)| `/badge/tests/linux` |
 
 ## 🎯 API Endpoints
 
