@@ -1,8 +1,11 @@
 /** @type {import('jest').Config} */
 export default {
-  // Simplified ESM Configuration
+  // ESM Configuration
   preset: null,
   testEnvironment: 'node',
+  
+  // Transform configuration - disable all transforms for ESM
+  transform: {},
   
   // Test file patterns
   testMatch: [

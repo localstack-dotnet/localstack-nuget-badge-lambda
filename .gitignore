@@ -1,3 +1,6 @@
 node_modules
 internal_docs
 .env
+
+# Temporary API exploration files
+temp/

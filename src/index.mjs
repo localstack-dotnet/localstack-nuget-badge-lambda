@@ -1,7 +1,7 @@
 import { packageHandler } from './handlers/packageHandler.mjs';
 import { testBadgeHandler } from './handlers/testBadgeHandler.mjs';
 import { testRedirectHandler } from './handlers/testRedirectHandler.mjs';
-import { create400Response, extractPlatform, isValidPlatform } from './utils/common.mjs';
+import { create400Response, create404Response, extractPlatform, isValidPlatform } from './utils/common.mjs';
 
 /*──────────────────────────────────────
   AWS Lambda Entry Point & Router
