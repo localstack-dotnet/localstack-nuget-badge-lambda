@@ -58,7 +58,7 @@ describe('Gist Service', () => {
       await gistService.getTestResults('linux');
       
       const status = gistService.getCacheStatus();
-      expect(status['test-results-linux']).toMatchObject({
+      expect(status['test-results-linux-v2']).toMatchObject({
         age: expect.any(Number),
         isValid: true,
         data: 'present'
@@ -108,8 +108,52 @@ describe('Gist Service', () => {
       gistService.clearCache('linux');
       
       const status = gistService.getCacheStatus();
-      expect(status).not.toHaveProperty('test-results-linux');
-      expect(status).toHaveProperty('test-results-windows');
+      expect(status).not.toHaveProperty('test-results-linux-v2');
+      expect(status).toHaveProperty('test-results-windows-v2');
+    });
+
+    test('clearCache can remove specific platform and track', async () => {
+      // Cache linux v1 and v2 data
+      axios.get.mockResolvedValue({ data: validTestData });
+      await gistService.getTestResults('linux', 'v1');
+      await gistService.getTestResults('linux', 'v2');
+      
+      // Cache windows v2 data
+      const windowsData = { ...validTestData, platform: 'windows' };
+      axios.get.mockResolvedValue({ data: windowsData });
+      await gistService.getTestResults('windows', 'v2');
+      
+      expect(Object.keys(gistService.getCacheStatus())).toHaveLength(3);
+      
+      // Clear only linux v1 cache
+      gistService.clearCache('linux', 'v1');
+      
+      const status = gistService.getCacheStatus();
+      expect(status).not.toHaveProperty('test-results-linux-v1');
+      expect(status).toHaveProperty('test-results-linux-v2');
+      expect(status).toHaveProperty('test-results-windows-v2');
+    });
+
+    test('clearCache clears all tracks for a platform when track not specified', async () => {
+      // Cache linux v1 and v2 data
+      axios.get.mockResolvedValue({ data: validTestData });
+      await gistService.getTestResults('linux', 'v1');
+      await gistService.getTestResults('linux', 'v2');
+      
+      // Cache windows v2 data
+      const windowsData = { ...validTestData, platform: 'windows' };
+      axios.get.mockResolvedValue({ data: windowsData });
+      await gistService.getTestResults('windows', 'v2');
+      
+      expect(Object.keys(gistService.getCacheStatus())).toHaveLength(3);
+      
+      // Clear all linux tracks
+      gistService.clearCache('linux');
+      
+      const status = gistService.getCacheStatus();
+      expect(status).not.toHaveProperty('test-results-linux-v1');
+      expect(status).not.toHaveProperty('test-results-linux-v2');
+      expect(status).toHaveProperty('test-results-windows-v2');
     });
   });
 
@@ -190,6 +234,67 @@ describe('Gist Service', () => {
         
         axios.get.mockClear();
       }
+    });
+
+    test('uses v2 URL by default (backward compatibility)', async () => {
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      await gistService.getTestResults('linux');
+      
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/472c59b7c2a1898c48a29f3c88897c5a/raw/test-results-linux.json',
+        expect.any(Object)
+      );
+    });
+
+    test('uses v1 URL when track=v1', async () => {
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      await gistService.getTestResults('linux', 'v1');
+      
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/fab5b0837878e8cad455ad28190e0ef0/raw/test-results-linux.json',
+        expect.any(Object)
+      );
+    });
+
+    test('uses v2 URL when track=v2', async () => {
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      await gistService.getTestResults('linux', 'v2');
+      
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/472c59b7c2a1898c48a29f3c88897c5a/raw/test-results-linux.json',
+        expect.any(Object)
+      );
+    });
+
+    test('caches data separately for different tracks', async () => {
+      // Clear cache to ensure clean state
+      gistService.clearCache();
+      
+      // Mock different data for v1 and v2 with correct totals
+      const v1Data = { ...validTestData, passed: 100, total: 103 }; // 100 passed + 2 failed + 1 skipped = 103
+      const v2Data = { ...validTestData, passed: 200, total: 203 }; // 200 passed + 2 failed + 1 skipped = 203
+      
+      // First call for v1
+      axios.get.mockResolvedValueOnce({ data: v1Data });
+      const result1 = await gistService.getTestResults('linux', 'v1');
+      expect(result1.passed).toBe(100);
+      
+      // Second call for v2
+      axios.get.mockResolvedValueOnce({ data: v2Data });
+      const result2 = await gistService.getTestResults('linux', 'v2');
+      expect(result2.passed).toBe(200);
+      
+      // Third calls should use cache (no more HTTP requests)
+      axios.get.mockClear();
+      const cachedResult1 = await gistService.getTestResults('linux', 'v1');
+      const cachedResult2 = await gistService.getTestResults('linux', 'v2');
+      
+      expect(axios.get).not.toHaveBeenCalled();
+      expect(cachedResult1.passed).toBe(100);
+      expect(cachedResult2.passed).toBe(200);
     });
   });
 
@@ -425,6 +530,34 @@ describe('Gist Service', () => {
       
       expect(url).toBeNull();
     });
+
+    test('passes track parameter to getTestResults', async () => {
+      const v1Data = { 
+        ...validTestData, 
+        url_html: 'https://github.com/example/v1-actions/runs/123'
+      };
+      axios.get.mockResolvedValue({ data: v1Data });
+      
+      const url = await gistService.getRedirectUrl('linux', 'v1');
+      
+      expect(url).toBe('https://github.com/example/v1-actions/runs/123');
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/fab5b0837878e8cad455ad28190e0ef0/raw/test-results-linux.json',
+        expect.any(Object)
+      );
+    });
+
+    test('defaults to v2 track when not specified', async () => {
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      const url = await gistService.getRedirectUrl('linux');
+      
+      expect(url).toBe('https://github.com/localstack/localstack-dotnet-client/actions/runs/123');
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/472c59b7c2a1898c48a29f3c88897c5a/raw/test-results-linux.json',
+        expect.any(Object)
+      );
+    });
   });
 
   describe('Edge Cases & Error Recovery', () => {
@@ -504,7 +637,7 @@ describe('Gist Service', () => {
       await gistService.getTestResults('linux');
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('📡 Fetching linux test results from Gist...')
+        expect.stringContaining('📡 Fetching linux test results from Gist (track: v2)...')
       );
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('✅ Successfully fetched linux test results:'),

@@ -5,7 +5,8 @@ import axios from "axios";
   Fetches CI/CD test data with caching
 ──────────────────────────────────────*/
 
-const GIST_BASE_URL = 'https://gist.githubusercontent.com/Blind-Striker/472c59b7c2a1898c48a29f3c88897c5a/raw/';
+const GIST_BASE_URL_V1 = 'https://gist.githubusercontent.com/Blind-Striker/fab5b0837878e8cad455ad28190e0ef0/raw/';
+const GIST_BASE_URL_V2 = 'https://gist.githubusercontent.com/Blind-Striker/472c59b7c2a1898c48a29f3c88897c5a/raw/';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 
@@ -13,25 +14,26 @@ const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const cache = new Map();
 
 export const gistService = {
-  async getTestResults(platform) {
+  async getTestResults(platform, track = 'v2') {
     if (!['linux', 'windows', 'macos'].includes(platform)) {
       throw new Error(`Invalid platform: ${platform}`);
     }
 
-    const cacheKey = `test-results-${platform}`;
+    const cacheKey = `test-results-${platform}-${track}`;
     const cached = cache.get(cacheKey);
     
     // Return cached data if still valid
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
-      console.log(`🟢 Cache hit for ${platform} test results`);
+      console.log(`🟢 Cache hit for ${platform} test results (track: ${track})`);
       return cached.data;
     }
 
     try {
-      console.log(`📡 Fetching ${platform} test results from Gist...`);
+      console.log(`📡 Fetching ${platform} test results from Gist (track: ${track})...`);
       
       const fileName = `test-results-${platform}.json`;
-      const url = `${GIST_BASE_URL}${fileName}`;
+      const baseUrl = track === 'v1' ? GIST_BASE_URL_V1 : GIST_BASE_URL_V2;
+      const url = `${baseUrl}${fileName}`;
       
       const response = await axios.get(url, {
         timeout: REQUEST_TIMEOUT_MS,
@@ -77,17 +79,27 @@ export const gistService = {
     }
   },
 
-  async getRedirectUrl(platform) {
-    const testData = await this.getTestResults(platform);
+  async getRedirectUrl(platform, track = 'v2') {
+    const testData = await this.getTestResults(platform, track);
     return testData?.url_html || null;
   },
 
   // Clear cache for testing or manual refresh
-  clearCache(platform = null) {
-    if (platform) {
-      const cacheKey = `test-results-${platform}`;
+  clearCache(platform = null, track = null) {
+    if (platform && track) {
+      const cacheKey = `test-results-${platform}-${track}`;
       cache.delete(cacheKey);
-      console.log(`🗑️ Cleared cache for ${platform}`);
+      console.log(`🗑️ Cleared cache for ${platform} (track: ${track})`);
+    } else if (platform) {
+      // Clear all tracks for a specific platform
+      const keysToDelete = [];
+      for (const key of cache.keys()) {
+        if (key.startsWith(`test-results-${platform}-`)) {
+          keysToDelete.push(key);
+        }
+      }
+      keysToDelete.forEach(key => cache.delete(key));
+      console.log(`🗑️ Cleared cache for ${platform} (all tracks)`);
     } else {
       cache.clear();
       console.log(`🗑️ Cleared all cache`);

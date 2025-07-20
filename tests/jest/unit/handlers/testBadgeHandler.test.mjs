@@ -131,7 +131,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
       expectShieldsIoFormat(response);
     });
 
@@ -142,7 +142,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/windows');
       const response = await testBadgeHandler.handle(event, 'windows');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('windows');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('windows', 'v2');
       expectShieldsIoFormat(response);
     });
 
@@ -153,7 +153,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/macos');
       const response = await testBadgeHandler.handle(event, 'macos');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('macos');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('macos', 'v2');
       expectShieldsIoFormat(response);
     });
 
@@ -164,7 +164,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/ubuntu');
       const response = await testBadgeHandler.handle(event, 'ubuntu');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('ubuntu');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('ubuntu', 'v2');
       expectShieldsIoFormat(response);
     });
 
@@ -175,7 +175,167 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/windows');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+    });
+  });
+
+  describe('Track Parameter Validation', () => {
+    test('defaults to v2 track when no query parameter provided', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux');
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
+    });
+
+    test('accepts valid track parameter v1', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { track: 'v1' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
+    });
+
+    test('accepts valid track parameter v2', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { track: 'v2' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
+    });
+
+    test('returns 400 error for invalid track parameter', async () => {
+      const event = createLambdaEvent('badge/tests/linux', { track: 'v3' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toContain("Invalid track parameter. Must be 'v1' or 'v2'");
+      expect(gistService.getTestResults).not.toHaveBeenCalled();
+    });
+
+    test('returns 400 error for invalid track parameter values', async () => {
+      const invalidTracks = ['v3', 'invalid', '1', '2', 'V1', 'V2', 'track1'];
+      
+      for (const track of invalidTracks) {
+        const event = createLambdaEvent('badge/tests/linux', { track });
+        const response = await testBadgeHandler.handle(event, 'linux');
+        
+        expect(response.statusCode).toBe(400);
+        expect(response.body).toContain("Invalid track parameter. Must be 'v1' or 'v2'");
+      }
+      
+      expect(gistService.getTestResults).not.toHaveBeenCalled();
+    });
+
+    test('handles empty string track parameter as invalid', async () => {
+      const event = createLambdaEvent('badge/tests/linux', { track: '' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toContain("Invalid track parameter. Must be 'v1' or 'v2'");
+      expect(gistService.getTestResults).not.toHaveBeenCalled();
+    });
+
+    test('ignores other query parameters when track is valid', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { 
+        track: 'v1',
+        color: 'blue',
+        label: 'custom'
+      });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
+    });
+  });
+
+  describe('Track Parameter Validation', () => {
+    test('defaults to v2 track when no query parameter provided', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux');
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expectShieldsIoFormat(response);
+    });
+
+    test('accepts valid track parameter v1', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { track: 'v1' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expectShieldsIoFormat(response);
+    });
+
+    test('accepts valid track parameter v2', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { track: 'v2' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expectShieldsIoFormat(response);
+    });
+
+    test('returns 400 error for invalid track parameter', async () => {
+      const event = createLambdaEvent('badge/tests/linux', { track: 'v3' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(gistService.getTestResults).not.toHaveBeenCalled();
+      
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe("Invalid track parameter. Must be 'v1' or 'v2'");
+    });
+
+    test('returns 400 error for various invalid track values', async () => {
+      const invalidValues = ['v0', 'v4', 'invalid', '1', '2', 'track1'];
+      
+      for (const invalidTrack of invalidValues) {
+        const event = createLambdaEvent('badge/tests/linux', { track: invalidTrack });
+        const response = await testBadgeHandler.handle(event, 'linux');
+        
+        expect(response.statusCode).toBe(400);
+        expect(gistService.getTestResults).not.toHaveBeenCalled();
+        
+        const body = JSON.parse(response.body);
+        expect(body.error).toBe("Invalid track parameter. Must be 'v1' or 'v2'");
+        
+        jest.clearAllMocks();
+      }
+    });
+
+    test('handles empty string track parameter as invalid', async () => {
+      const event = createLambdaEvent('badge/tests/linux', { track: '' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(gistService.getTestResults).not.toHaveBeenCalled();
+    });
+
+    test('ignores other query parameters when track is valid', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { 
+        track: 'v1',
+        utm_source: 'badge',
+        ref: 'main'
+      });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expectShieldsIoFormat(response);
     });
   });
 
@@ -219,7 +379,7 @@ describe('Test Badge Handler', () => {
       await testBadgeHandler.handle(event, 'linux');
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('🔥 Error generating test badge for linux:'),
+        expect.stringContaining('🔥 Error generating test badge for linux (track: v2):'),
         expect.any(String)
       );
       
@@ -462,7 +622,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
       expectShieldsIoFormat(response);
     });
 
@@ -473,7 +633,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/Linux');
       const response = await testBadgeHandler.handle(event, 'linux'); // Router normalized
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
     });
 
     test('maintains consistent response format for badge APIs', async () => {

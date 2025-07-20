@@ -31,7 +31,7 @@ describe('Test Redirect Handler', () => {
       const response = await testRedirectHandler.handle(event, 'linux');
       
       expectRedirectResponse(response, testUrl);
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v2');
     });
 
     test('handles complex GitHub Actions URLs', async () => {
@@ -74,7 +74,7 @@ describe('Test Redirect Handler', () => {
       const event = createLambdaEvent('redirect/test-results/linux');
       const response = await testRedirectHandler.handle(event, 'linux');
       
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v2');
       expectRedirectResponse(response, testUrl);
     });
 
@@ -85,7 +85,7 @@ describe('Test Redirect Handler', () => {
       const event = createLambdaEvent('redirect/test-results/windows');
       const response = await testRedirectHandler.handle(event, 'windows');
       
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('windows');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('windows', 'v2');
       expectRedirectResponse(response, testUrl);
     });
 
@@ -96,7 +96,7 @@ describe('Test Redirect Handler', () => {
       const event = createLambdaEvent('redirect/test-results/macos');
       const response = await testRedirectHandler.handle(event, 'macos');
       
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('macos');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('macos', 'v2');
       expectRedirectResponse(response, testUrl);
     });
 
@@ -108,7 +108,7 @@ describe('Test Redirect Handler', () => {
       const event = createLambdaEvent('redirect/test-results/ubuntu');
       const response = await testRedirectHandler.handle(event, 'ubuntu');
       
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('ubuntu');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('ubuntu', 'v2');
       expectRedirectResponse(response, testUrl);
     });
 
@@ -120,7 +120,89 @@ describe('Test Redirect Handler', () => {
       const event = createLambdaEvent('redirect/test-results/windows');
       const response = await testRedirectHandler.handle(event, 'linux');
       
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v2');
+    });
+  });
+
+  describe('Track Parameter Validation', () => {
+    test('defaults to v2 track when no query parameter provided', async () => {
+      const testUrl = 'https://github.com/test/actions/runs/123';
+      gistService.getRedirectUrl.mockResolvedValue(testUrl);
+      
+      const event = createLambdaEvent('redirect/test-results/linux');
+      const response = await testRedirectHandler.handle(event, 'linux');
+      
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v2');
+      expectRedirectResponse(response, testUrl);
+    });
+
+    test('accepts valid track parameter v1', async () => {
+      const testUrl = 'https://github.com/test/actions/runs/123';
+      gistService.getRedirectUrl.mockResolvedValue(testUrl);
+      
+      const event = createLambdaEvent('redirect/test-results/linux', { track: 'v1' });
+      const response = await testRedirectHandler.handle(event, 'linux');
+      
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v1');
+      expectRedirectResponse(response, testUrl);
+    });
+
+    test('accepts valid track parameter v2', async () => {
+      const testUrl = 'https://github.com/test/actions/runs/123';
+      gistService.getRedirectUrl.mockResolvedValue(testUrl);
+      
+      const event = createLambdaEvent('redirect/test-results/linux', { track: 'v2' });
+      const response = await testRedirectHandler.handle(event, 'linux');
+      
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v2');
+      expectRedirectResponse(response, testUrl);
+    });
+
+    test('returns 400 error for invalid track parameter', async () => {
+      const event = createLambdaEvent('redirect/test-results/linux', { track: 'v3' });
+      const response = await testRedirectHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toContain("Invalid track parameter. Must be 'v1' or 'v2'");
+      expect(gistService.getRedirectUrl).not.toHaveBeenCalled();
+    });
+
+    test('returns 400 error for various invalid track values', async () => {
+      const invalidTracks = ['v3', 'invalid', '1', '2', 'V1', 'V2', 'track1'];
+      
+      for (const track of invalidTracks) {
+        const event = createLambdaEvent('redirect/test-results/linux', { track });
+        const response = await testRedirectHandler.handle(event, 'linux');
+        
+        expect(response.statusCode).toBe(400);
+        expect(response.body).toContain("Invalid track parameter. Must be 'v1' or 'v2'");
+      }
+      
+      expect(gistService.getRedirectUrl).not.toHaveBeenCalled();
+    });
+
+    test('handles empty string track parameter as invalid', async () => {
+      const event = createLambdaEvent('redirect/test-results/linux', { track: '' });
+      const response = await testRedirectHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toContain("Invalid track parameter. Must be 'v1' or 'v2'");
+      expect(gistService.getRedirectUrl).not.toHaveBeenCalled();
+    });
+
+    test('ignores other query parameters when track is valid', async () => {
+      const testUrl = 'https://github.com/test/actions/runs/123';
+      gistService.getRedirectUrl.mockResolvedValue(testUrl);
+      
+      const event = createLambdaEvent('redirect/test-results/linux', { 
+        track: 'v1',
+        utm_source: 'badge',
+        ref: 'main'
+      });
+      const response = await testRedirectHandler.handle(event, 'linux');
+      
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v1');
+      expectRedirectResponse(response, testUrl);
     });
   });
 
@@ -163,7 +245,7 @@ describe('Test Redirect Handler', () => {
       await testRedirectHandler.handle(event, 'linux');
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('🔥 Error generating redirect for linux:'),
+        expect.stringContaining('🔥 Error generating redirect for linux (track: v2):'),
         expect.any(String)
       );
       
@@ -179,7 +261,7 @@ describe('Test Redirect Handler', () => {
       await testRedirectHandler.handle(event, 'linux');
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('⚠️ No redirect URL available for linux, using fallback')
+        expect.stringContaining('⚠️ No redirect URL available for linux (track: v2), using fallback')
       );
       
       consoleSpy.mockRestore();
@@ -330,7 +412,7 @@ describe('Test Redirect Handler', () => {
       const event = createLambdaEvent('redirect/test-results/linux');
       const response = await testRedirectHandler.handle(event, 'linux');
       
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v2');
       expectRedirectResponse(response, testUrl);
     });
 
@@ -342,7 +424,7 @@ describe('Test Redirect Handler', () => {
       const event = createLambdaEvent('redirect/test-results/Linux');
       const response = await testRedirectHandler.handle(event, 'linux'); // Router normalized
       
-      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux');
+      expect(gistService.getRedirectUrl).toHaveBeenCalledWith('linux', 'v2');
     });
 
     test('maintains consistent redirect format for all platforms', async () => {
