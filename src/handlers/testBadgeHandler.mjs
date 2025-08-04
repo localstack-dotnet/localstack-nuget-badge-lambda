@@ -1,5 +1,8 @@
-import { gistService } from '../services/gistService.mjs';
-import { createTestBadgeResponse, create400Response } from '../utils/common.mjs';
+import { gistService } from "../services/gistService.mjs";
+import {
+  createTestBadgeResponse,
+  create400Response,
+} from "../utils/common.mjs";
 
 /*──────────────────────────────────────
   Test Badge Handler
@@ -9,44 +12,71 @@ import { createTestBadgeResponse, create400Response } from '../utils/common.mjs'
 export const testBadgeHandler = {
   async handle(event, platform) {
     console.log(`🧪 Generating test badge for platform: ${platform}`);
-    
+
     // Extract and validate track parameter
     const track = event.queryStringParameters?.track;
-    let validatedTrack = 'v2'; // Default to v2
-    
+    const packageName = event.queryStringParameters?.package;
+    let validatedTrack = "v2"; // Default to v2
+    let defaultPackageName = "Aspire.Hosting.LocalStack"; // Default package
+    let withPackage = false;
+
     if (track !== undefined && track !== null) {
-      if (track !== 'v1' && track !== 'v2') {
-        return create400Response("Invalid track parameter. Must be 'v1' or 'v2'");
+      if (track !== "v1" && track !== "v2") {
+        return create400Response(
+          "Invalid track parameter. Must be 'v1' or 'v2'"
+        );
       }
       validatedTrack = track;
+    } else if (packageName !== undefined && packageName !== null) {
+      if (packageName !== "Aspire.Hosting.LocalStack") {
+        return create400Response(
+          "Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified"
+        );
+      }
+      withPackage = true;
     }
-    
-    console.log(`🏷️ Using track: ${validatedTrack}`);
-    
+
+    if (withPackage) {
+      console.log(`🏷️ Using package: ${packageName}`);
+    } else {
+      console.log(`🏷️ Using track: ${validatedTrack}`);
+    }
+
     try {
       // Fetch test results from Gist
-      const testData = await gistService.getTestResults(platform, validatedTrack);
-      
+      const testData = await gistService.getTestResults(
+        platform,
+        validatedTrack,
+        withPackage ? defaultPackageName : null
+      );
+
       if (!testData) {
-        console.log(`⚠️ No test data available for ${platform} (track: ${validatedTrack}), returning unavailable badge`);
+        console.log(
+          `⚠️ No test data available for ${platform} (track: ${validatedTrack}), returning unavailable badge`
+        );
         return createTestBadgeResponse(null, platform);
       }
 
-      console.log(`✅ Test data found for ${platform} (track: ${validatedTrack}):`, {
-        passed: testData.passed,
-        failed: testData.failed,
-        skipped: testData.skipped,
-        total: testData.total
-      });
+      console.log(
+        `✅ Test data found for ${platform} (track: ${validatedTrack}):`,
+        {
+          passed: testData.passed,
+          failed: testData.failed,
+          skipped: testData.skipped,
+          total: testData.total,
+        }
+      );
 
       // Generate badge response
       return createTestBadgeResponse(testData, platform);
-
     } catch (error) {
-      console.error(`🔥 Error generating test badge for ${platform} (track: ${validatedTrack}):`, error.message);
-      
+      console.error(
+        `🔥 Error generating test badge for ${platform} (track: ${validatedTrack}):`,
+        error.message
+      );
+
       // Return unavailable badge on error
       return createTestBadgeResponse(null, platform);
     }
-  }
-}; 
+  },
+};

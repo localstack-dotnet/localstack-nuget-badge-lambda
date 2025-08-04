@@ -7,6 +7,7 @@ import axios from "axios";
 
 const GIST_BASE_URL_V1 = 'https://gist.githubusercontent.com/Blind-Striker/fab5b0837878e8cad455ad28190e0ef0/raw/';
 const GIST_BASE_URL_V2 = 'https://gist.githubusercontent.com/Blind-Striker/472c59b7c2a1898c48a29f3c88897c5a/raw/';
+const GIST_BASE_URL_WITH_PACKAGE = 'https://gist.githubusercontent.com/Blind-Striker/f2b8df60871ea8cd0fa6b746798690b4/raw/';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 
@@ -14,17 +15,21 @@ const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const cache = new Map();
 
 export const gistService = {
-  async getTestResults(platform, track = 'v2') {
+  async getTestResults(platform, track = 'v2', packageName) {
     if (!['linux', 'windows', 'macos'].includes(platform)) {
       throw new Error(`Invalid platform: ${platform}`);
     }
 
-    const cacheKey = `test-results-${platform}-${track}`;
+    const cacheKey = packageName ? `test-results-${platform}-${packageName}` : `test-results-${platform}-${track}`;
     const cached = cache.get(cacheKey);
     
     // Return cached data if still valid
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
-      console.log(`🟢 Cache hit for ${platform} test results (track: ${track})`);
+      if (packageName) {
+        console.log(`🟢 Cache hit for ${platform} test results with package '${packageName}'`);
+      } else {
+        console.log(`🟢 Cache hit for ${platform} test results (track: ${track})`);
+      }
       return cached.data;
     }
 
@@ -32,7 +37,7 @@ export const gistService = {
       console.log(`📡 Fetching ${platform} test results from Gist (track: ${track})...`);
       
       const fileName = `test-results-${platform}.json`;
-      const baseUrl = track === 'v1' ? GIST_BASE_URL_V1 : GIST_BASE_URL_V2;
+      const baseUrl = packageName ? GIST_BASE_URL_WITH_PACKAGE : (track === 'v1' ? GIST_BASE_URL_V1 : GIST_BASE_URL_V2);
       const url = `${baseUrl}${fileName}`;
       
       const response = await axios.get(url, {
@@ -79,8 +84,8 @@ export const gistService = {
     }
   },
 
-  async getRedirectUrl(platform, track = 'v2') {
-    const testData = await this.getTestResults(platform, track);
+  async getRedirectUrl(platform, track = 'v2', packageName) {
+    const testData = await this.getTestResults(platform, track, packageName);
     return testData?.url_html || null;
   },
 

@@ -131,7 +131,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
       expectShieldsIoFormat(response);
     });
 
@@ -142,7 +142,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/windows');
       const response = await testBadgeHandler.handle(event, 'windows');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('windows', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('windows', 'v2', null);
       expectShieldsIoFormat(response);
     });
 
@@ -153,7 +153,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/macos');
       const response = await testBadgeHandler.handle(event, 'macos');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('macos', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('macos', 'v2', null);
       expectShieldsIoFormat(response);
     });
 
@@ -164,7 +164,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/ubuntu');
       const response = await testBadgeHandler.handle(event, 'ubuntu');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('ubuntu', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('ubuntu', 'v2', null);
       expectShieldsIoFormat(response);
     });
 
@@ -175,7 +175,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/windows');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
     });
   });
 
@@ -186,7 +186,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
       expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
     });
 
@@ -196,7 +196,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux', { track: 'v1' });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1', null);
       expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
     });
 
@@ -206,7 +206,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux', { track: 'v2' });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
       expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
     });
 
@@ -252,7 +252,7 @@ describe('Test Badge Handler', () => {
       });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1', null);
       expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
     });
   });
@@ -264,7 +264,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
       expectShieldsIoFormat(response);
     });
 
@@ -274,7 +274,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux', { track: 'v1' });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1', null);
       expectShieldsIoFormat(response);
     });
 
@@ -284,7 +284,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux', { track: 'v2' });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
       expectShieldsIoFormat(response);
     });
 
@@ -334,8 +334,87 @@ describe('Test Badge Handler', () => {
       });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1', null);
       expectShieldsIoFormat(response);
+    });
+  });
+
+  describe('Package Parameter Validation', () => {
+    test('accepts valid package parameter', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { package: 'Aspire.Hosting.LocalStack' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
+    });
+
+    test('uses package-specific gist source when package parameter provided', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/windows', { package: 'Aspire.Hosting.LocalStack' });
+      const response = await testBadgeHandler.handle(event, 'windows');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('windows', 'v2', 'Aspire.Hosting.LocalStack');
+      expectShieldsIoFormat(response);
+    });
+
+    test('returns 400 error for invalid package parameter', async () => {
+      const event = createLambdaEvent('badge/tests/linux', { package: 'Invalid.Package' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toContain("Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified");
+      expect(gistService.getTestResults).not.toHaveBeenCalled();
+    });
+
+    test('returns 400 error for empty package parameter', async () => {
+      const event = createLambdaEvent('badge/tests/linux', { package: '' });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toContain("Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified");
+      expect(gistService.getTestResults).not.toHaveBeenCalled();
+    });
+
+    test('track parameter takes precedence over package parameter when both provided', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { 
+        track: 'v1',
+        package: 'Aspire.Hosting.LocalStack'
+      });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      // Should use track, not package
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v1', null);
+      expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
+    });
+
+    test('ignores other query parameters when package is valid', async () => {
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { 
+        package: 'Aspire.Hosting.LocalStack',
+        color: 'blue',
+        label: 'custom'
+      });
+      const response = await testBadgeHandler.handle(event, 'linux');
+      
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
+    });
+
+    test('logs appropriate message when using package parameter', async () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      gistService.getTestResults.mockResolvedValue(mockTestResults);
+      
+      const event = createLambdaEvent('badge/tests/linux', { package: 'Aspire.Hosting.LocalStack' });
+      await testBadgeHandler.handle(event, 'linux');
+      
+      expect(consoleSpy).toHaveBeenCalledWith('🏷️ Using package: Aspire.Hosting.LocalStack');
+      consoleSpy.mockRestore();
     });
   });
 
@@ -622,7 +701,7 @@ describe('Test Badge Handler', () => {
       const event = createLambdaEvent('badge/tests/linux');
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
       expectShieldsIoFormat(response);
     });
 
@@ -632,8 +711,8 @@ describe('Test Badge Handler', () => {
       // Router should normalize to lowercase, but handler should handle any case
       const event = createLambdaEvent('badge/tests/Linux');
       const response = await testBadgeHandler.handle(event, 'linux'); // Router normalized
-      
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2');
+
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', null);
     });
 
     test('maintains consistent response format for badge APIs', async () => {

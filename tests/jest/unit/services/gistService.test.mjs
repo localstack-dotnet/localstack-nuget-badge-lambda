@@ -298,6 +298,116 @@ describe('Gist Service', () => {
     });
   });
 
+  describe('Package Parameter Handling', () => {
+    test('uses package-specific gist URL when package parameter provided', async () => {
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/f2b8df60871ea8cd0fa6b746798690b4/raw/test-results-linux.json',
+        {
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'LocalStack-Badge-API/1.0'
+          }
+        }
+      );
+    });
+
+    test('uses track-specific gist URL when no package parameter provided', async () => {
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      await gistService.getTestResults('windows', 'v1');
+      
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/fab5b0837878e8cad455ad28190e0ef0/raw/test-results-windows.json',
+        {
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'LocalStack-Badge-API/1.0'
+          }
+        }
+      );
+    });
+
+    test('uses v2 track gist URL by default when no package parameter provided', async () => {
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      await gistService.getTestResults('macos', 'v2');
+      
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/472c59b7c2a1898c48a29f3c88897c5a/raw/test-results-macos.json',
+        {
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'LocalStack-Badge-API/1.0'
+          }
+        }
+      );
+    });
+
+    test('uses separate cache keys for package vs track parameters', async () => {
+      const trackData = { ...validTestData, passed: 100, total: 103 }; // 100 + 2 + 1 = 103
+      const packageData = { ...validTestData, passed: 200, total: 203 }; // 200 + 2 + 1 = 203
+      
+      axios.get.mockResolvedValueOnce({ data: trackData });
+      axios.get.mockResolvedValueOnce({ data: packageData });
+      
+      // Get track-based result
+      const trackResult = await gistService.getTestResults('linux', 'v2');
+      
+      // Get package-based result
+      const packageResult = await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      
+      expect(trackResult.passed).toBe(100);
+      expect(packageResult.passed).toBe(200);
+      expect(axios.get).toHaveBeenCalledTimes(2);
+      
+      // Verify cache separation - should use cached values
+      axios.get.mockClear();
+      const cachedTrackResult = await gistService.getTestResults('linux', 'v2');
+      const cachedPackageResult = await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      
+      expect(axios.get).not.toHaveBeenCalled();
+      expect(cachedTrackResult.passed).toBe(100);
+      expect(cachedPackageResult.passed).toBe(200);
+    });
+
+    test('logs package-specific cache hit messages', async () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      axios.get.mockResolvedValue({ data: validTestData });
+      
+      // First call - cache miss
+      await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      
+      // Second call - cache hit
+      await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "🟢 Cache hit for linux test results with package 'Aspire.Hosting.LocalStack'"
+      );
+      
+      consoleSpy.mockRestore();
+    });
+
+    test('getRedirectUrl passes package parameter correctly', async () => {
+      const testData = { ...validTestData, url_html: 'https://github.com/aspire/actions/runs/123' };
+      axios.get.mockResolvedValue({ data: testData });
+      
+      const redirectUrl = await gistService.getRedirectUrl('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      
+      expect(redirectUrl).toBe('https://github.com/aspire/actions/runs/123');
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://gist.githubusercontent.com/Blind-Striker/f2b8df60871ea8cd0fa6b746798690b4/raw/test-results-linux.json',
+        expect.any(Object)
+      );
+    });
+  });
+
   describe('Platform Validation', () => {
     test('accepts valid platform: linux', async () => {
       axios.get.mockResolvedValue({ data: validTestData });
