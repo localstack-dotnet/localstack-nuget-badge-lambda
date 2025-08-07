@@ -302,7 +302,7 @@ describe('Gist Service', () => {
     test('uses package-specific gist URL when package parameter provided', async () => {
       axios.get.mockResolvedValue({ data: validTestData });
       
-      await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      await gistService.getTestResults('linux', 'v2', 'LocalStack.Aspire.Hosting');
       
       expect(axios.get).toHaveBeenCalledWith(
         'https://gist.githubusercontent.com/Blind-Striker/f2b8df60871ea8cd0fa6b746798690b4/raw/test-results-linux.json',
@@ -361,7 +361,7 @@ describe('Gist Service', () => {
       const trackResult = await gistService.getTestResults('linux', 'v2');
       
       // Get package-based result
-      const packageResult = await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      const packageResult = await gistService.getTestResults('linux', 'v2', 'LocalStack.Aspire.Hosting');
       
       expect(trackResult.passed).toBe(100);
       expect(packageResult.passed).toBe(200);
@@ -370,7 +370,7 @@ describe('Gist Service', () => {
       // Verify cache separation - should use cached values
       axios.get.mockClear();
       const cachedTrackResult = await gistService.getTestResults('linux', 'v2');
-      const cachedPackageResult = await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      const cachedPackageResult = await gistService.getTestResults('linux', 'v2', 'LocalStack.Aspire.Hosting');
       
       expect(axios.get).not.toHaveBeenCalled();
       expect(cachedTrackResult.passed).toBe(100);
@@ -382,13 +382,13 @@ describe('Gist Service', () => {
       axios.get.mockResolvedValue({ data: validTestData });
       
       // First call - cache miss
-      await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      await gistService.getTestResults('linux', 'v2', 'LocalStack.Aspire.Hosting');
       
       // Second call - cache hit
-      await gistService.getTestResults('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      await gistService.getTestResults('linux', 'v2', 'LocalStack.Aspire.Hosting');
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        "🟢 Cache hit for linux test results with package 'Aspire.Hosting.LocalStack'"
+        "🟢 Cache hit for linux test results with package 'LocalStack.Aspire.Hosting'"
       );
       
       consoleSpy.mockRestore();
@@ -398,7 +398,7 @@ describe('Gist Service', () => {
       const testData = { ...validTestData, url_html: 'https://github.com/aspire/actions/runs/123' };
       axios.get.mockResolvedValue({ data: testData });
       
-      const redirectUrl = await gistService.getRedirectUrl('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      const redirectUrl = await gistService.getRedirectUrl('linux', 'v2', 'LocalStack.Aspire.Hosting');
       
       expect(redirectUrl).toBe('https://github.com/aspire/actions/runs/123');
       expect(axios.get).toHaveBeenCalledWith(

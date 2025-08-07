@@ -343,20 +343,20 @@ describe('Test Badge Handler', () => {
     test('accepts valid package parameter', async () => {
       gistService.getTestResults.mockResolvedValue(mockTestResults);
       
-      const event = createLambdaEvent('badge/tests/linux', { package: 'Aspire.Hosting.LocalStack' });
+      const event = createLambdaEvent('badge/tests/linux', { package: 'LocalStack.Aspire.Hosting' });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', 'LocalStack.Aspire.Hosting');
       expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
     });
 
     test('uses package-specific gist source when package parameter provided', async () => {
       gistService.getTestResults.mockResolvedValue(mockTestResults);
       
-      const event = createLambdaEvent('badge/tests/windows', { package: 'Aspire.Hosting.LocalStack' });
+      const event = createLambdaEvent('badge/tests/windows', { package: 'LocalStack.Aspire.Hosting' });
       const response = await testBadgeHandler.handle(event, 'windows');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('windows', 'v2', 'Aspire.Hosting.LocalStack');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('windows', 'v2', 'LocalStack.Aspire.Hosting');
       expectShieldsIoFormat(response);
     });
 
@@ -365,7 +365,7 @@ describe('Test Badge Handler', () => {
       const response = await testBadgeHandler.handle(event, 'linux');
       
       expect(response.statusCode).toBe(400);
-      expect(response.body).toContain("Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified");
+      expect(response.body).toContain("Invalid package parameter. Must be 'LocalStack.Aspire.Hosting' if track is not specified");
       expect(gistService.getTestResults).not.toHaveBeenCalled();
     });
 
@@ -374,7 +374,7 @@ describe('Test Badge Handler', () => {
       const response = await testBadgeHandler.handle(event, 'linux');
       
       expect(response.statusCode).toBe(400);
-      expect(response.body).toContain("Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified");
+      expect(response.body).toContain("Invalid package parameter. Must be 'LocalStack.Aspire.Hosting' if track is not specified");
       expect(gistService.getTestResults).not.toHaveBeenCalled();
     });
 
@@ -383,7 +383,7 @@ describe('Test Badge Handler', () => {
       
       const event = createLambdaEvent('badge/tests/linux', { 
         track: 'v1',
-        package: 'Aspire.Hosting.LocalStack'
+        package: 'LocalStack.Aspire.Hosting'
       });
       const response = await testBadgeHandler.handle(event, 'linux');
       
@@ -396,13 +396,13 @@ describe('Test Badge Handler', () => {
       gistService.getTestResults.mockResolvedValue(mockTestResults);
       
       const event = createLambdaEvent('badge/tests/linux', { 
-        package: 'Aspire.Hosting.LocalStack',
+        package: 'LocalStack.Aspire.Hosting',
         color: 'blue',
         label: 'custom'
       });
       const response = await testBadgeHandler.handle(event, 'linux');
       
-      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', 'Aspire.Hosting.LocalStack');
+      expect(gistService.getTestResults).toHaveBeenCalledWith('linux', 'v2', 'LocalStack.Aspire.Hosting');
       expectTestBadgeFormat(response, '2 failed, 150 passed', 'critical');
     });
 
@@ -410,10 +410,10 @@ describe('Test Badge Handler', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
       gistService.getTestResults.mockResolvedValue(mockTestResults);
       
-      const event = createLambdaEvent('badge/tests/linux', { package: 'Aspire.Hosting.LocalStack' });
+      const event = createLambdaEvent('badge/tests/linux', { package: 'LocalStack.Aspire.Hosting' });
       await testBadgeHandler.handle(event, 'linux');
       
-      expect(consoleSpy).toHaveBeenCalledWith('🏷️ Using package: Aspire.Hosting.LocalStack');
+      expect(consoleSpy).toHaveBeenCalledWith('🏷️ Using package: LocalStack.Aspire.Hosting');
       consoleSpy.mockRestore();
     });
   });

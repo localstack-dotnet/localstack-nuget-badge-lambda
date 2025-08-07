@@ -14,7 +14,7 @@ export const testRedirectHandler = {
     const track = event.queryStringParameters?.track;
     const packageName = event.queryStringParameters?.package;
     let validatedTrack = "v2"; // Default to v2
-    let defaultPackageName = "Aspire.Hosting.LocalStack"; // Default package
+    let defaultPackageName = "LocalStack.Aspire.Hosting"; // Default package
     let withPackage = false;
 
     if (track !== undefined && track !== null) {
@@ -25,9 +25,9 @@ export const testRedirectHandler = {
       }
       validatedTrack = track;
     } else if (packageName !== undefined && packageName !== null) {
-      if (packageName !== "Aspire.Hosting.LocalStack") {
+      if (packageName !== "LocalStack.Aspire.Hosting") {
         return create400Response(
-          "Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified"
+          "Invalid package parameter. Must be 'LocalStack.Aspire.Hosting' if track is not specified"
         );
       }
       withPackage = true;

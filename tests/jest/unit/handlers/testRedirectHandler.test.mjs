@@ -278,14 +278,14 @@ describe("Test Redirect Handler", () => {
       gistService.getRedirectUrl.mockResolvedValue(testUrl);
 
       const event = createLambdaEvent("redirect/test-results/linux", {
-        package: "Aspire.Hosting.LocalStack",
+        package: "LocalStack.Aspire.Hosting",
       });
       const response = await testRedirectHandler.handle(event, "linux");
 
       expect(gistService.getRedirectUrl).toHaveBeenCalledWith(
         "linux",
         "v2",
-        "Aspire.Hosting.LocalStack"
+        "LocalStack.Aspire.Hosting"
       );
       expectRedirectResponse(response, testUrl);
     });
@@ -295,14 +295,14 @@ describe("Test Redirect Handler", () => {
       gistService.getRedirectUrl.mockResolvedValue(testUrl);
 
       const event = createLambdaEvent("redirect/test-results/windows", {
-        package: "Aspire.Hosting.LocalStack",
+        package: "LocalStack.Aspire.Hosting",
       });
       const response = await testRedirectHandler.handle(event, "windows");
 
       expect(gistService.getRedirectUrl).toHaveBeenCalledWith(
         "windows",
         "v2",
-        "Aspire.Hosting.LocalStack"
+        "LocalStack.Aspire.Hosting"
       );
       expectRedirectResponse(response, testUrl);
     });
@@ -315,7 +315,7 @@ describe("Test Redirect Handler", () => {
 
       expect(response.statusCode).toBe(400);
       expect(response.body).toContain(
-        "Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified"
+        "Invalid package parameter. Must be 'LocalStack.Aspire.Hosting' if track is not specified"
       );
       expect(gistService.getRedirectUrl).not.toHaveBeenCalled();
     });
@@ -328,7 +328,7 @@ describe("Test Redirect Handler", () => {
 
       expect(response.statusCode).toBe(400);
       expect(response.body).toContain(
-        "Invalid package parameter. Must be 'Aspire.Hosting.LocalStack' if track is not specified"
+        "Invalid package parameter. Must be 'LocalStack.Aspire.Hosting' if track is not specified"
       );
       expect(gistService.getRedirectUrl).not.toHaveBeenCalled();
     });
@@ -339,7 +339,7 @@ describe("Test Redirect Handler", () => {
 
       const event = createLambdaEvent("redirect/test-results/linux", {
         track: "v1",
-        package: "Aspire.Hosting.LocalStack",
+        package: "LocalStack.Aspire.Hosting",
       });
       const response = await testRedirectHandler.handle(event, "linux");
 
@@ -357,7 +357,7 @@ describe("Test Redirect Handler", () => {
       gistService.getRedirectUrl.mockResolvedValue(testUrl);
 
       const event = createLambdaEvent("redirect/test-results/linux", {
-        package: "Aspire.Hosting.LocalStack",
+        package: "LocalStack.Aspire.Hosting",
         utm_source: "badge",
         ref: "main",
       });
@@ -366,7 +366,7 @@ describe("Test Redirect Handler", () => {
       expect(gistService.getRedirectUrl).toHaveBeenCalledWith(
         "linux",
         "v2",
-        "Aspire.Hosting.LocalStack"
+        "LocalStack.Aspire.Hosting"
       );
       expectRedirectResponse(response, testUrl);
     });
@@ -375,7 +375,7 @@ describe("Test Redirect Handler", () => {
       gistService.getRedirectUrl.mockResolvedValue(null);
 
       const event = createLambdaEvent("redirect/test-results/linux", {
-        package: "Aspire.Hosting.LocalStack",
+        package: "LocalStack.Aspire.Hosting",
       });
       const response = await testRedirectHandler.handle(event, "linux");
 
@@ -388,7 +388,7 @@ describe("Test Redirect Handler", () => {
       gistService.getRedirectUrl.mockRejectedValue(new Error("Network error"));
 
       const event = createLambdaEvent("redirect/test-results/windows", {
-        package: "Aspire.Hosting.LocalStack",
+        package: "LocalStack.Aspire.Hosting",
       });
       const response = await testRedirectHandler.handle(event, "windows");
 
@@ -403,12 +403,12 @@ describe("Test Redirect Handler", () => {
       gistService.getRedirectUrl.mockResolvedValue(testUrl);
 
       const event = createLambdaEvent("redirect/test-results/linux", {
-        package: "Aspire.Hosting.LocalStack",
+        package: "LocalStack.Aspire.Hosting",
       });
       await testRedirectHandler.handle(event, "linux");
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "🏷️ Using package: Aspire.Hosting.LocalStack"
+        "🏷️ Using package: LocalStack.Aspire.Hosting"
       );
       consoleSpy.mockRestore();
     });
